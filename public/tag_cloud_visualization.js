@@ -90,7 +90,7 @@ export class TagCloudVisualization {
       this._tagCloud.setData([]);
       return;
     }
-
+    const mapData = this.generateData(response);
     const data = response.tables[0];
     this._bucketAgg = this._vis.aggs.find(agg => agg.type.name === 'terms');
 
@@ -112,7 +112,7 @@ export class TagCloudVisualization {
     }
 
     this._tagCloud.setData(tags);
-
+    //this._tagCloud.setWaferMapData(mapData);
   }
 
   _updateParams() {
@@ -121,6 +121,44 @@ export class TagCloudVisualization {
 
   _resize() {
     this._tagCloud.resize();
+  }
+  generateData(response) {
+    const tableCnt = response.tables.length;
+    let rowNo = 0;
+    let columnNo =0;
+    let maxY = 0;
+    let maxX = 0;
+    // only one series case
+    if (tableCnt == 1) {
+      const columnCnt = response.tables[0].columns.length;
+      const rowCnt = response.tables[0].rows.length;
+      if (columnCnt == 3) {
+        while (rowNo != rowCnt) {
+          maxX = (maxX < response.tables[0].rows[rowNo][0] ? response.tables[0].rows[rowNo][0] : maxX);
+          maxY = (maxY < response.tables[0].rows[rowNo][1] ? response.tables[0].rows[rowNo][1] : maxY);
+          rowNo++;
+        }
+        rowNo = 0;
+        let mapData = new Array(maxY + 1);
+        while (rowNo != maxY + 1) {
+          let columnNo =0;
+          let rowData = new Array(maxX + 1);
+          while (columnNo != maxX + 1) {
+            rowData[columnNo] = columnNo;
+            columnNo ++;
+          }
+          mapData[rowNo] = rowData;
+          rowNo ++;
+        }
+        return mapData;
+      }
+      else{
+
+      }
+    }
+    else if (tableCount > 1) {
+
+    }
   }
 
 }

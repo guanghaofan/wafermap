@@ -23,11 +23,16 @@ class TagCloud extends EventEmitter {
   constructor(domNode) {
 
     super();
-
+    
     //DOM
+    this._marginLeft = 50;
+    this._marginBottom = 50;
+    this._marginTop = 20;
+    this._marginRight = 50;
     this._element = domNode;
     this._d3SvgContainer = d3.select(this._element).append('svg');
-    this._svgGroup = this._d3SvgContainer.append('g');
+    this._svgGroup = this._d3SvgContainer.append('g')
+        .attr("transform", "translate(" + this._marginLeft + "," + this._marginTop + ")");
     this._size = [1, 1];
     this.resize();
 
@@ -55,7 +60,165 @@ class TagCloud extends EventEmitter {
     this._layoutIsUpdating = null;
     this._allInViewBox = false;
     this._DOMisUpdating = false;
-
+    
+     this._demoData = [
+           {
+            "x": 0,
+            "y" : 0,
+            "z": 6
+           },
+           {
+            "x": 0,
+            "y" : 7,
+            "z": 6
+           },
+           {
+            "x": 2,
+            "y" : 7,
+            "z": 17
+           },
+           {
+            "x": 0,
+            "y" : 1,
+            "z": 6
+           },
+            {
+            "x": 1,
+            "y" : 0,
+            "z": 6
+           },
+           {
+            "x": 5,
+            "y" : 0,
+            "z": 1
+           },
+           {
+            "x": 6,
+            "y" : 0,
+            "z": 3
+           },
+           {
+            "x": 6,
+            "y" : 6,
+            "z": 2
+           },
+           {
+            "x": 0,
+            "y" : 6,
+            "z": 5
+           },
+           {
+            "x": 1,
+            "y" : 1,
+            "z": 6
+           },
+            {
+            "x": 1,
+            "y" : 2,
+            "z": 5
+           },
+           {
+            "x": 1,
+            "y" : 3,
+            "z": 4
+           },
+           {
+            "x": 1,
+            "y" : 4,
+            "z": 4
+           },
+            {
+            "x": 1,
+            "y" : 5,
+            "z": 6
+           },
+            {
+            "x": 1,
+            "y" : 6,
+            "z": 1
+           },
+            {
+            "x": 2,
+            "y" : 1,
+            "z": 6
+           },
+            {
+            "x": 2,
+            "y" : 2,
+            "z": 6
+           },
+            {
+            "x": 2,
+            "y" : 3,
+            "z": 3
+           },
+            {
+            "x": 2,
+            "y" : 4,
+            "z": 1
+           },
+            {
+            "x": 2,
+            "y" : 5,
+            "z": 13
+           },
+            {
+            "x": 2,
+            "y" : 6,
+            "z": 14
+           },
+            {
+            "x": 3,
+            "y" : 3,
+            "z": 4
+           },
+            {
+            "x": 3,
+            "y" : 4,
+            "z": 2
+           },
+          {
+            "x": 3,
+            "y" : 5,
+            "z": 1
+           }, {
+            "x": 3,
+            "y" : 6,
+            "z": 6
+           },
+            {
+            "x": 4,
+            "y" : 1,
+            "z": 10
+           },
+            {
+            "x": 4,
+            "y" : 2,
+            "z": 20
+           },
+            {
+            "x": 4,
+            "y" : 3,
+            "z": 1
+           },
+            {
+            "x": 4,
+            "y" : 4,
+            "z": 1
+           },
+            {
+            "x": 4,
+            "y" : 5,
+            "z": 4
+           },
+            {
+            "x": 4,
+            "y" : 6,
+            "z": 3
+           }
+          ];
+    this._x = [0, 1, 2, 3, 4, 5, 6];
+    this._y = [0, 1, 2, 3, 4, 5, 6];
   }
 
   setOptions(options) {
@@ -168,7 +331,7 @@ class TagCloud extends EventEmitter {
 
 
   _emptyDOM() {
-    this._svgGroup.selectAll('text').remove();
+    this._svgGroup.selectAll('*').remove();
     this._cloudWidth = 0;
     this._cloudHeight = 0;
     this._allInViewBox = true;
@@ -189,6 +352,69 @@ class TagCloud extends EventEmitter {
     const stage = svgTextNodes.data(job.words, getText);
 
     await new Promise((resolve) => {
+      
+
+       
+      this._emptyDOM();
+      var cellHeight = (this._size[1] - this._marginTop - this._marginBottom) /(this._y.length + 2);
+      var cellWidth = (this._size[0] - this._marginLeft - this._marginRight) / (this._x.length + 2)
+      var colorDomain = d3.extent(this._demoData, function(d){
+      return d.z;
+    });
+
+   /**
+    var colorScale = d3.scaleLinear()
+      .domain(colorDomain)
+      .range(["green","blue"]);
+   */
+    function x(d, i) {
+       return (i + 1) * cellWidth + this._marginLeft;
+    }
+   
+    function rectx(d, i) {
+       return (d.x +1 ) * cellWidth - 0.5*cellWidth + this._marginLeft;
+    }
+
+    var colorScale = d3.scale.threshold()
+        .domain([3, 15])
+        .range(["#2980B9", "#E67E22", "#27AE60", "#27AE60"]);
+
+
+      var yLabels = this._svgGroup.selectAll(".dayLabel")
+          .data(this._y)
+          .enter().append("text")
+            .text(function (d) { return d; })
+            .attr("x", 0)
+            .attr("y", function (d, i) { return (i + 1) * cellHeight; });
+     var xLabels = this._svgGroup.selectAll(".timeLabel")
+          .data(this._x)
+          .enter().append("text")
+            .text(function(d) { return d; })
+            .attr("x",  function (d, i) { return (i + 1) * cellWidth; })
+            .attr("y", this._size[1] - this._marginBottom - cellHeight);
+    var rectangles = this._svgGroup.selectAll("rect")
+      .data(this._demoData)
+      .enter()
+      .append("rect");
+
+    rectangles
+    .attr("x", function (d){ return (d.x +1 ) * cellWidth - 0.5*cellWidth; })
+    .attr("y", function(d){
+      return ( d.y + 1 ) * cellHeight - 0.5*cellHeight;
+    })
+    .attr("width", cellWidth)
+    .attr("height", cellHeight)
+    .transition().duration(100).style("fill", function(d){
+      return colorScale(d.z);
+    });
+    
+
+
+
+         
+
+
+
 
       const enterSelection = stage.enter();
       const enteringTags = enterSelection.append('text');
