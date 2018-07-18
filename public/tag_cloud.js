@@ -53,7 +53,8 @@ class TagCloud extends EventEmitter {
 
     //DATA
     this._words = null;
-
+    this._minZ = 0;
+    this._maxZ = 1;
     //UTIL
     this._setTimeoutId = null;
     this._pendingJob = null;
@@ -265,7 +266,12 @@ class TagCloud extends EventEmitter {
   setY(data){
     this._y = data;
   }
-
+  setMinZ(data) {
+    this._minZ = data;
+  }
+  setMaxZ(data) {
+    this._maxZ = data;
+  }
   destroy() {
     clearTimeout(this._setTimeoutId);
     this._element.innerHTML = '';
@@ -381,8 +387,8 @@ class TagCloud extends EventEmitter {
        return (d.x +1 ) * cellWidth - 0.5*cellWidth + this._marginLeft;
     }
 
-    var colorScale = d3.scale.threshold()
-        .domain([3, 15])
+    var colorScale = d3.scale.linear()
+        .domain([this._minZ, this._maxZ])
         .range(["#2980B9", "#E67E22", "#27AE60", "#27AE60"]);
 
 

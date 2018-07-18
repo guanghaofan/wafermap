@@ -129,6 +129,8 @@ export class TagCloudVisualization {
     let columnNo =0;
     let maxY = 0;
     let maxX = 0;
+    let minZ = 0;
+    let maxZ = 0;
     // only one series case
     if (tableCnt == 1) {
       const columnCnt = response.tables[0].columns.length;
@@ -137,8 +139,19 @@ export class TagCloudVisualization {
         while (rowNo != rowCnt) {
           maxX = (maxX < response.tables[0].rows[rowNo][0] ? response.tables[0].rows[rowNo][0] : maxX);
           maxY = (maxY < response.tables[0].rows[rowNo][1] ? response.tables[0].rows[rowNo][1] : maxY);
+          if(rowNo === 0) {
+            minZ = response.tables[0].rows[rowNo][2];
+            maxZ = minZ;
+          }
+	  else {
+ 	    maxZ = (maxZ < response.tables[0].rows[rowNo][2] ? response.tables[0].rows[rowNo][2] : maxZ);
+            minZ = (minZ > response.tables[0].rows[rowNo][2] ? response.tables[0].rows[rowNo][2] : minZ);
+
+          }
           rowNo++;
         }
+        this._tagCloud.setMinZ(minZ);
+        this._tagCloud.setMaxZ(maxZ);
         rowNo = 0;
         let y = new Array(maxY + 1);
         let x = new Array(maxX + 1);
