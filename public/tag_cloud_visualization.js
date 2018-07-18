@@ -110,8 +110,9 @@ export class TagCloudVisualization {
     } else {
       this._truncated = false;
     }
-
-    this._tagCloud.setData(tags);
+    if(response.tables.length === 1 && response.tables[0].columns.length === 3) {
+      this._tagCloud.setData(response.tables[0].rows);
+    }
     //this._tagCloud.setWaferMapData(mapData);
   }
 
@@ -139,18 +140,19 @@ export class TagCloudVisualization {
           rowNo++;
         }
         rowNo = 0;
-        let mapData = new Array(maxY + 1);
+        let y = new Array(maxY + 1);
+        let x = new Array(maxX + 1);
         while (rowNo != maxY + 1) {
-          let columnNo =0;
-          let rowData = new Array(maxX + 1);
-          while (columnNo != maxX + 1) {
-            rowData[columnNo] = columnNo;
-            columnNo ++;
-          }
-          mapData[rowNo] = rowData;
+          y[rowNo] = rowNo;
           rowNo ++;
         }
-        return mapData;
+        columnNo = 0;
+        while (columnNo != maxX + 1) {
+          x[columnNo] = columnNo;
+          columnNo++;
+        }
+        this._tagCloud.setX(x);
+        this._tagCloud.setY(y);
       }
       else{
 

@@ -259,6 +259,12 @@ class TagCloud extends EventEmitter {
     this._words = data;
     this._invalidate(false);
   }
+  setX(data){
+    this._x = data;
+  }
+  setY(data){
+    this._y = data;
+  }
 
   destroy() {
     clearTimeout(this._setTimeoutId);
@@ -358,8 +364,8 @@ class TagCloud extends EventEmitter {
       this._emptyDOM();
       var cellHeight = (this._size[1] - this._marginTop - this._marginBottom) /(this._y.length + 2);
       var cellWidth = (this._size[0] - this._marginLeft - this._marginRight) / (this._x.length + 2)
-      var colorDomain = d3.extent(this._demoData, function(d){
-      return d.z;
+      var colorDomain = d3.extent(this._words, function(d){
+      return d[2];
     });
 
    /**
@@ -393,19 +399,19 @@ class TagCloud extends EventEmitter {
             .attr("x",  function (d, i) { return (i + 1) * cellWidth; })
             .attr("y", this._size[1] - this._marginBottom - cellHeight);
     var rectangles = this._svgGroup.selectAll("rect")
-      .data(this._demoData)
+      .data(this._words)
       .enter()
       .append("rect");
 
     rectangles
-    .attr("x", function (d){ return (d.x +1 ) * cellWidth - 0.5*cellWidth; })
+    .attr("x", function (d){ return (d[0] +1 ) * cellWidth - 0.5*cellWidth; })
     .attr("y", function(d){
-      return ( d.y + 1 ) * cellHeight - 0.5*cellHeight;
+      return ( d[1] + 1 ) * cellHeight - 0.5*cellHeight;
     })
     .attr("width", cellWidth)
     .attr("height", cellHeight)
     .transition().duration(100).style("fill", function(d){
-      return colorScale(d.z);
+      return colorScale(d[2]);
     });
     
 
