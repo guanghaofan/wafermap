@@ -34,7 +34,6 @@ class TagCloud extends EventEmitter {
     this._svgGroup = this._d3SvgContainer.append('g')
         .attr("transform", "translate(" + this._marginLeft + "," + this._marginTop + ")");
     this._size = [1, 1];
-    this.resize();
 
     //SETTING (non-configurable)
     this._fontFamily = 'Open Sans, sans-serif';
@@ -55,6 +54,8 @@ class TagCloud extends EventEmitter {
     this._words = null;
     this._minZ = 0;
     this._maxZ = 1;
+    this._xTitle = null;
+    this._yTitle = null;
     //UTIL
     this._setTimeoutId = null;
     this._pendingJob = null;
@@ -234,44 +235,21 @@ class TagCloud extends EventEmitter {
     this._textScale = options.scale;
     this._invalidate(false);
   }
-
-
-  resize() {
-    const newWidth = this._element.offsetWidth;
-    const newHeight = this._element.offsetHeight;
-
-    if (newWidth === this._size[0] && newHeight === this._size[1]) {
-      return;
-    }
-
-    const wasInside = this._size[0] >= this._cloudWidth && this._size[1] >= this._cloudHeight;
-    const willBeInside = this._cloudWidth <= newWidth && this._cloudHeight <= newHeight;
-    this._size[0] = newWidth;
-    this._size[1] = newHeight;
-    if (wasInside && willBeInside && this._allInViewBox) {
-      this._invalidate(true);
-    } else {
-      this._invalidate(false);
-    }
-
-  }
-
-  setData(data) {
+  
+  setData(minZ, maxZ, x, y, data, xTitle, yTitle) {
+    this._minZ = minZ;
+    this._maxZ = maxZ;
+    this._x = x;
+    this._y = y;
     this._words = data;
+    this._xTitle = xTitle;
+    this._yTitle = yTitle;
+  }
+ 
+  upateSVG() {
     this._invalidate(false);
   }
-  setX(data){
-    this._x = data;
-  }
-  setY(data){
-    this._y = data;
-  }
-  setMinZ(data) {
-    this._minZ = data;
-  }
-  setMaxZ(data) {
-    this._maxZ = data;
-  }
+
   destroy() {
     clearTimeout(this._setTimeoutId);
     this._element.innerHTML = '';
@@ -282,10 +260,10 @@ class TagCloud extends EventEmitter {
   }
 
   _updateContainerSize() {
-    this._d3SvgContainer.attr('width', this._size[0]);
-    this._d3SvgContainer.attr('height', this._size[1]);
-    this._svgGroup.attr('width', this._size[0]);
-    this._svgGroup.attr('height', this._size[1]);
+    this._d3SvgContainer.attr('width', this._element.offsetWidth);
+    this._d3SvgContainer.attr('height', this._element.offsetHeight);
+    this._svgGroup.attr('width', this._element.offsetWidth);
+    this._svgGroup.attr('height', this._element.offsetHeight);
   }
 
   _isJobRunning() {
@@ -368,8 +346,8 @@ class TagCloud extends EventEmitter {
 
        
       this._emptyDOM();
-      var cellHeight = (this._size[1] - this._marginTop - this._marginBottom) /(this._y.length + 2);
-      var cellWidth = (this._size[0] - this._marginLeft - this._marginRight) / (this._x.length + 2)
+      var cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) /(this._y.length + 2);
+      var cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / (this._x.length + 2)
       var colorDomain = d3.extent(this._words, function(d){
       return d[2];
     });
@@ -403,7 +381,7 @@ class TagCloud extends EventEmitter {
           .enter().append("text")
             .text(function(d) { return d; })
             .attr("x",  function (d, i) { return (i + 1) * cellWidth; })
-            .attr("y", this._size[1] - this._marginBottom - cellHeight);
+            .attr("y", this._element.offsetHeight - this._marginBottom - cellHeight);
     var rectangles = this._svgGroup.selectAll("rect")
       .data(this._words)
       .enter()
@@ -589,8 +567,8 @@ class TagCloud extends EventEmitter {
       };
     }) : [];
     debug.size = {
-      width: this._size[0],
-      height: this._size[1]
+      width: this._element.offsetWidth,
+      height: this._element.offsetHeight
     };
     return debug;
   }

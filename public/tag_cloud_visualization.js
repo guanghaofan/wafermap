@@ -21,6 +21,7 @@ export class TagCloudVisualization {
     this._vis = vis;
     this._bucketAgg = null;
     this._truncated = false;
+    this._invalidBucketCnt = false;
     this._tagCloud = new TagCloud(cloudContainer);
     this._tagCloud.on('select', (event) => {
       if (!this._bucketAgg) {
@@ -43,18 +44,27 @@ export class TagCloudVisualization {
   }
 
   async render(data, status) {
+    if (this._validateBucket) {
+      if (status.params || status.aggs) {
+        this._updateParams();
+      }
 
-    if (status.params || status.aggs) {
-      this._updateParams();
+      if (status.data || status.resize) {
+        if (status.data) {
+          this._updateData(data);
+        }
+        this._tagCloud.upateSVG();
+      }
     }
 
-    if (status.data) {
-      this._updateData(data);
-    }
+    this._feedbackMessage.setState({
+      shouldShowInvalidBucketCnt: this._invalidBucketCnt,
+      shouldShowTruncate: this._truncated,
+      shouldShowIncomplete: this._tagCloud.getStatus() === TagCloud.STATUS.INCOMPLETE
+    });
 
-
-    if (status.resize) {
-      this._resize();
+    if (this._invalidBucketCnt) {
+     return;
     }
 
     await this._renderComplete$.take(1).toPromise();
@@ -71,10 +81,6 @@ export class TagCloudVisualization {
       label: `${this._vis.aggs[0].makeLabel()} - ${this._vis.aggs[1].makeLabel()}`,
       shouldShowLabel: this._vis.params.showLabel
     });
-    this._feedbackMessage.setState({
-      shouldShowTruncate: this._truncated,
-      shouldShowIncomplete: this._tagCloud.getStatus() === TagCloud.STATUS.INCOMPLETE
-    });
   }
 
 
@@ -84,46 +90,59 @@ export class TagCloudVisualization {
     unmountComponentAtNode(this._labelNode);
 
   }
+  
+  _validateBucket() {
+    // check the buckets and metrics count
+    const aggCnt = this._vis.aggs.raw.length;
+    let metricCnt = 0;
+    let bucketCnt = 0;
+    let seriesCnt = 0;
+    for(let aggNo =0; aggNo != aggCnt; aggNo ++) {
+      switch (this._vis.aggs.raw[aggNo].type.type) {
+        case "metrics":
+          if(this._vis.aggs.raw[aggNo].enabled) {
+            metricCnt++;
+          }
+          break;
+        case "buckets":
+          if (this._vis.aggs.raw[aggNo].type.name === "terms") {
+            bucketCnt++;
+          }
+          else {
+            seriesCnt++;
+          }
+          break;
+      }
+    }
 
+    if (bucketCnt !=2 || metricCnt != 1) {
+      this._invalidBucketCnt = true;
+      return false;
+    }
+    else {
+      this._invalidBucketCnt = false;
+      return true;
+    }
+  }
+
+ 
   _updateData(response) {
+    // no response
     if (!response || !response.tables.length) {
-      this._tagCloud.setData([]);
       return;
     }
-    const mapData = this.generateData(response);
-    const data = response.tables[0];
-    this._bucketAgg = this._vis.aggs.find(agg => agg.type.name === 'terms');
-
-    const tags = data.rows.map(row => {
-      const [tag, count] = row;
-      return {
-        displayText: this._bucketAgg ? this._bucketAgg.fieldFormatter()(tag) : tag,
-        rawText: tag,
-        value: count
-      };
-    });
-
-
-    if (tags.length > MAX_TAG_COUNT) {
-      tags.length = MAX_TAG_COUNT;
-      this._truncated = true;
-    } else {
-      this._truncated = false;
+    else if (response.tables[0].columns.length != 3) {
+      this._validBucketCnt = false;
+      return;
     }
-    if(response.tables.length === 1 && response.tables[0].columns.length === 3) {
-      this._tagCloud.setData(response.tables[0].rows);
-    }
-    //this._tagCloud.setWaferMapData(mapData);
+    this._generateData(response);
   }
 
   _updateParams() {
     this._tagCloud.setOptions(this._vis.params);
   }
 
-  _resize() {
-    this._tagCloud.resize();
-  }
-  generateData(response) {
+  _generateData(response) {
     const tableCnt = response.tables.length;
     let rowNo = 0;
     let columnNo =0;
@@ -131,11 +150,11 @@ export class TagCloudVisualization {
     let maxX = 0;
     let minZ = 0;
     let maxZ = 0;
+    const columnCnt = 3;
     // only one series case
+ 
     if (tableCnt == 1) {
-      const columnCnt = response.tables[0].columns.length;
       const rowCnt = response.tables[0].rows.length;
-      if (columnCnt == 3) {
         while (rowNo != rowCnt) {
           maxX = (maxX < response.tables[0].rows[rowNo][0] ? response.tables[0].rows[rowNo][0] : maxX);
           maxY = (maxY < response.tables[0].rows[rowNo][1] ? response.tables[0].rows[rowNo][1] : maxY);
@@ -150,8 +169,6 @@ export class TagCloudVisualization {
           }
           rowNo++;
         }
-        this._tagCloud.setMinZ(minZ);
-        this._tagCloud.setMaxZ(maxZ);
         rowNo = 0;
         let y = new Array(maxY + 1);
         let x = new Array(maxX + 1);
@@ -164,12 +181,7 @@ export class TagCloudVisualization {
           x[columnNo] = columnNo;
           columnNo++;
         }
-        this._tagCloud.setX(x);
-        this._tagCloud.setY(y);
-      }
-      else{
-
-      }
+        this._tagCloud.setData(minZ, maxZ, x, y, response.tables[0].rows, response.tables[0].columns[0].title, response.tables[0].columns[1].title);
     }
     else if (tableCount > 1) {
 
