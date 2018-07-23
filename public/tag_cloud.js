@@ -20,15 +20,16 @@ const D3_SCALING_FUNCTIONS = {
 
 class TagCloud extends EventEmitter {
 
-  constructor(domNode) {
+  constructor(domNode, marginLeft, marginRight, marginTop, marginBottom, marginNeighbor) {
 
     super();
     
     //DOM
-    this._marginLeft = 50;
-    this._marginBottom = 50;
-    this._marginTop = 20;
-    this._marginRight = 50;
+    this._marginLeft = marginLeft;
+    this._marginBottom = marginBottom;
+    this._marginTop = marginTop;
+    this._marginRight = marginRight;
+    this._merginNeighbor = marginNeighbor;
     this._element = domNode;
     this._d3SvgContainer = d3.select(this._element).append('svg');
     this._svgGroup = this._d3SvgContainer.append('g')
@@ -56,6 +57,7 @@ class TagCloud extends EventEmitter {
     this._maxZ = 1;
     this._xTitle = null;
     this._yTitle = null;
+    this._row = null;
     //UTIL
     this._setTimeoutId = null;
     this._pendingJob = null;
@@ -236,18 +238,22 @@ class TagCloud extends EventEmitter {
     this._invalidate(false);
   }
   
-  setData(minZ, maxZ, x, y, data, xTitle, yTitle) {
+  setData(minZ, maxZ, x, y, data, row) {
     this._minZ = minZ;
     this._maxZ = maxZ;
     this._x = x;
     this._y = y;
     this._words = data;
-    this._xTitle = xTitle;
-    this._yTitle = yTitle;
+    this._row = row;
+    //this._xTitle = xTitle;
+    //this._yTitle = yTitle;
   }
  
   upateSVG() {
     this._invalidate(false);
+  }
+  clearSVG() {
+    this._emptyDOM();
   }
 
   destroy() {
@@ -342,34 +348,101 @@ class TagCloud extends EventEmitter {
     const stage = svgTextNodes.data(job.words, getText);
 
     await new Promise((resolve) => {
-      
-
+      const tableCnt = this._words.length;
+      let xWidth = 0; // row mode for x coord
+      let yHeight = 0; // column mode for y coord
+      if (tableCnt === 1) {
+        var cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) /(this._y.length);
+        var cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / (this._x.length);
+      }
+      else {
+        if (this._row) {
+          var cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) /(this._y.length);
+          var cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight - (tableCnt - 1) * this._marginNeighbor) / (this._x.length * tableCnt);
+          xWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight - (tableCnt - 1) * this._marginNeighbor) / tableCnt + this._marginNeighbor;
+       }
+        else {
+          var cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom - (tableCnt - 1) * this._marginNeighbor) /(this._y.length * tableCnt);
+          var cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / (this._x.length);
+          yHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom - (tableCnt - 1) * this._marginNeighbor) /tableCnt + this._marginNeighbor;
+        }
+      }
+     
        
       this._emptyDOM();
+      /**
       var cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) /(this._y.length + 2);
       var cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / (this._x.length + 2)
       var colorDomain = d3.extent(this._words, function(d){
-      return d[2];
-    });
+        return d[2];
+      });
 
-   /**
-    var colorScale = d3.scaleLinear()
-      .domain(colorDomain)
-      .range(["green","blue"]);
-   */
-    function x(d, i) {
-       return (i + 1) * cellWidth + this._marginLeft;
-    }
    
-    function rectx(d, i) {
-       return (d.x +1 ) * cellWidth - 0.5*cellWidth + this._marginLeft;
-    }
+      var colorScale = d3.scaleLinear()
+        .domain(colorDomain)
+        .range(["green","blue"]);
+   
+      function x(d, i) {
+        return (i + 1) * cellWidth + this._marginLeft;
+      }
+   
+      function rectx(d, i) {
+        return (d.x +1 ) * cellWidth - 0.5*cellWidth + this._marginLeft;
+      }
+      */
 
-    var colorScale = d3.scale.linear()
+      var colorScale = d3.scale.linear()
         .domain([this._minZ, this._maxZ])
         .range(["#2980B9", "#E67E22", "#27AE60", "#27AE60"]);
 
+      let tableNo = 0;
+      const isRow = this._row;
+      const yBase = this._element.offsetHeight - this._marginBottom - this._marginTop;      
+      while (tableNo !== tableCnt) {
+        var xLabels = this._svgGroup.selectAll("xLabel-" + tableNo)
+          .data(this._x)
+          .enter().append("text")
+            .text(function (d) { return d; })
+            .attr("x", function (d, i) {
+              return (isRow || tableCnt === 1 ? tableNo * xWidth + (i + 0.5) * cellWidth : (i + 0.5) * cellWidth); 
+            }) 
+            .attr("y", function (d, i) {
+              return (isRow || tableCnt === 1 ? yBase + 0.5 * cellHeight :
+                tableNo * yHeight + yBase + 0.5 * cellHeight);
+           });
+        var yLabels = this._svgGroup.selectAll(".yLabel-" + tableNo)
+          .data(this._y)
+          .enter().append("text")
+            .text(function (d) { return d; })
+            .attr("x",  function (d, i) {
+              return (isRow || tableCnt === 1 ? yHeight * tableNo : 0);
+            })
+            .attr("y", function (d, i) {
+              return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight : (i + 0.5) * cellHeight + yHeight * tableNo); 
+            });
+        var rectangles = this._svgGroup.selectAll("rect-" + tableNo)
+          .data(tableCnt === 1 ? this._words[tableNo].rows : this._words[tableNo].tables[0].rows)
+          .enter()
+          .append("rect");
 
+        rectangles
+          .attr("x", function (d) {
+             return (isRow || tableCnt === 1 ? d[0] * cellWidth + tableNo * xWidth : d[0] * cellWidth); 
+          })
+          .attr("y", function(d) {
+            return (isRow || tableCnt === 1 ? d[1] * cellHeight : d[1] * cellHeight + tableNo * yHeight);
+          })
+          .attr("width", cellWidth)
+          .attr("height", cellHeight)
+          .attr('fill', function(d) {
+            return colorScale(d[2]);
+          });
+         tableNo++;
+       } 
+  
+       
+      /*
+       
       var yLabels = this._svgGroup.selectAll(".dayLabel")
           .data(this._y)
           .enter().append("text")
@@ -394,12 +467,12 @@ class TagCloud extends EventEmitter {
     })
     .attr("width", cellWidth)
     .attr("height", cellHeight)
-    .transition().duration(100).style("fill", function(d){
-      return colorScale(d[2]);
-    });
+    //.transition().duration(100).style("fill", function(d){ return colorScale(d[2]); })
+    .attr('fill', function(d) { return colorScale(d[2]); });
+    ;
     
 
-
+    */
 
          
 
