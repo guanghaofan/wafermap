@@ -26,7 +26,7 @@ export class TagCloudVisualization {
     this._marginLeft = 50;
     this._marginRight = 50;
     this._marginNeighbor = 50;
-    this._tagCloud = new TagCloud(cloudContainer, this._marginLeft, this._marginRight, this._marginTop, this._marginBottom);
+    this._tagCloud = new TagCloud(cloudContainer, this._marginLeft, this._marginRight, this._marginTop, this._marginBottom, this._marginNeighbor);
     this._tagCloud.on('select', (event) => {
       if (!this._bucketAgg) {
         return;
@@ -48,9 +48,16 @@ export class TagCloudVisualization {
     this._series = false;
     this._row = false;
     this._tableCnt = 0;
+    this._mapHeight = 200;
+    this._mapWidth = 200;
   }
 
   async render(data, status) {
+    if(!(data.tables && data.tables.length)) {
+      // no data;
+      return;
+    } 
+    this._tableCnt = data.tables.length;
     if (this._validateBucket()) {
       if (status.params || status.aggs) {
         this._updateParams();
@@ -123,17 +130,17 @@ export class TagCloudVisualization {
     }
     else {
       this._invalidBucketCnt = false;
-      if (bucketCnt === 2 && (this._containerNode.clientHeight - this._marginTop - this._marginBottom < 300 || this._containerNode.clientWidth - this._marginLeft - this._marginRight < 300)) {
+      if (bucketCnt === 2 && (this._containerNode.clientHeight - this._marginTop - this._marginBottom < this._mapHeight || this._containerNode.clientWidth - this._marginLeft - this._marginRight < this._mapWidth)) {
           this._incomplete = true;
           return false;        
       }
       else if (this._series) {
         if ((this._row
-           && ((this._containerNode.clientWidth - this._marginLeft - this._marginRight - (this._tableCnt - 1) * this._marginNeighbor)/this._tableCnt < 300
-             || this._containerNode.clientHeight + this._marginTop + this._marginBottom < 300))
+           && ((this._containerNode.clientWidth - this._marginLeft - this._marginRight - (this._tableCnt - 1) * this._marginNeighbor)/this._tableCnt < this._mapWidth
+             || this._containerNode.clientHeight + this._marginTop + this._marginBottom < this._mapHeight))
            || ((!this._row)
-             && ((this._containerNode.clientHeight -  this._marginTop - this._marginBottom - (this._tableCnt - 1) * this._marginNeighbor)/this._tableCnt < 300
-              || this._containerNode.clientWidth - this._marginLeft - this._marginRight < 300))) {
+             && ((this._containerNode.clientHeight -  this._marginTop - this._marginBottom - (this._tableCnt - 1) * this._marginNeighbor)/this._tableCnt < this._mapHeight
+              || this._containerNode.clientWidth - this._marginLeft - this._marginRight < this._mapWidth))) {
           this._incomplete = true;
           return false;
         }
@@ -157,7 +164,6 @@ export class TagCloudVisualization {
   }
 
   _generateData(response) {
-    this._tableCnt = response.tables.length;
     let rowNo = 0;
     let columnNo =0;
     let maxY = 0;
@@ -169,10 +175,15 @@ export class TagCloudVisualization {
     // only one series case
  
     while (tableNo !== this._tableCnt) {
-      let chartData = response.tables[tableNo].rows;
+      let chartData;
       if (this._tableCnt > 1) {
-        charData = response.tables[tableNo].tables[0].rows;
+        var temp  = response.tables[tableNo].tables["0"];
+        chartData = temp.rows;
       }
+      else {
+        chartData = response.tables[tableNo].rows;
+      }
+      
       let rowNo = 0;
       let columnNo =0;
       const rowCnt = chartData.length;

@@ -29,7 +29,7 @@ class TagCloud extends EventEmitter {
     this._marginBottom = marginBottom;
     this._marginTop = marginTop;
     this._marginRight = marginRight;
-    this._merginNeighbor = marginNeighbor;
+    this._marginNeighbor = marginNeighbor;
     this._element = domNode;
     this._d3SvgContainer = d3.select(this._element).append('svg');
     this._svgGroup = this._d3SvgContainer.append('g')
@@ -351,19 +351,21 @@ class TagCloud extends EventEmitter {
       const tableCnt = this._words.length;
       let xWidth = 0; // row mode for x coord
       let yHeight = 0; // column mode for y coord
+      let cellHeight = 0;
+      let cellWidth = 0;
       if (tableCnt === 1) {
-        var cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) /(this._y.length);
-        var cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / (this._x.length);
+        cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) /(this._y.length);
+        cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / (this._x.length);
       }
       else {
         if (this._row) {
-          var cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) /(this._y.length);
-          var cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight - (tableCnt - 1) * this._marginNeighbor) / (this._x.length * tableCnt);
+          cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) /(this._y.length);
+          cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight - (tableCnt - 1) * this._marginNeighbor) / (this._x.length * tableCnt);
           xWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight - (tableCnt - 1) * this._marginNeighbor) / tableCnt + this._marginNeighbor;
        }
         else {
-          var cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom - (tableCnt - 1) * this._marginNeighbor) /(this._y.length * tableCnt);
-          var cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / (this._x.length);
+          cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom - (tableCnt - 1) * this._marginNeighbor) /(this._y.length * tableCnt);
+          cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / this._x.length;
           yHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom - (tableCnt - 1) * this._marginNeighbor) /tableCnt + this._marginNeighbor;
         }
       }
@@ -421,7 +423,7 @@ class TagCloud extends EventEmitter {
               return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight : (i + 0.5) * cellHeight + yHeight * tableNo); 
             });
         var rectangles = this._svgGroup.selectAll("rect-" + tableNo)
-          .data(tableCnt === 1 ? this._words[tableNo].rows : this._words[tableNo].tables[0].rows)
+          .data(tableCnt === 1 ? this._words[tableNo].rows : this._words[tableNo].tables["0"].rows)
           .enter()
           .append("rect");
 
