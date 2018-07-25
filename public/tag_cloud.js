@@ -71,6 +71,7 @@ class TagCloud extends EventEmitter {
      
     this._x = null;
     this._y = null;
+    this._showGrid = false;
   }
 
   setOptions(options) {
@@ -210,25 +211,31 @@ class TagCloud extends EventEmitter {
       let chartWidth = 0; // = xWidth - neighbor
       let chartHeight = 0;
       let spaceCellCnt = 0.5;
-      let showGrid = true;
       
-      
-        if (this._row) {
-          cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) / (this._y.length + spaceCellCnt);
-          cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight - (tableCnt - 1) * this._marginNeighbor) / ((this._x.length + spaceCellCnt) * tableCnt);
-          xWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight - (tableCnt - 1) * this._marginNeighbor) / tableCnt + this._marginNeighbor;
-          chartWidth = xWidth - this._marginNeighbor;
-          yHeight = this._element.offsetHeight - this._marginTop - this._marginBottom;
-          chartHeight = yHeight;
-       }
-        else {
-          cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom - (tableCnt - 1) * this._marginNeighbor) /((this._y.length + spaceCellCnt) * tableCnt);
-          cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / (this._x.length + spaceCellCnt);
-          yHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom - (tableCnt - 1) * this._marginNeighbor) /tableCnt + this._marginNeighbor;
-          chartHeight = yHeight - this._marginNeighbor;
-          xWidth = this._element.offsetWidth - this._marginLeft - this._marginRight;
-          chartWidth = xWidth;
-        }
+      if (tableCnt === 1) {
+        cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) / (this._y.length + spaceCellCnt);
+        cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / ((this._x.length + spaceCellCnt) * tableCnt);
+        xWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / tableCnt;
+        chartWidth = xWidth;
+        yHeight = this._element.offsetHeight - this._marginTop - this._marginBottom;
+        chartHeight = yHeight;
+      }
+      else if (this._row) {
+        cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) / (this._y.length + spaceCellCnt);
+        cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight - (tableCnt - 1) * this._marginNeighbor) / ((this._x.length + spaceCellCnt) * tableCnt);
+        xWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight - (tableCnt - 1) * this._marginNeighbor) / tableCnt + this._marginNeighbor;
+        chartWidth = xWidth - this._marginNeighbor;
+        yHeight = this._element.offsetHeight - this._marginTop - this._marginBottom;
+        chartHeight = yHeight;
+      }
+      else {
+        cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom - (tableCnt - 1) * this._marginNeighbor) /((this._y.length + spaceCellCnt) * tableCnt);
+        cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / (this._x.length + spaceCellCnt);
+        yHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom - (tableCnt - 1) * this._marginNeighbor) /tableCnt + this._marginNeighbor;
+        chartHeight = yHeight - this._marginNeighbor;
+        xWidth = this._element.offsetWidth - this._marginLeft - this._marginRight;
+        chartWidth = xWidth;
+      }
       
      
        
@@ -358,34 +365,9 @@ class TagCloud extends EventEmitter {
           .attr("height", cellHeight)
           .attr('fill', function(d) {
             return colorScale(d[2]);
-          });
-
-                      
-          var xLines = this._svgGroup.selectAll("line-" + tableNo)
-          .data(this._y)
-          .enter()
-          .append("line");
-
-          xLines
-           .attr("x1", function (d, i) {
-                return (isRow || tableCnt === 1 ? xWidth * tableNo : 0);
-             })
-           .attr("y1", function (d, i) {
-                return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 : (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 + yHeight * tableNo);
-              })
-
-           .attr("x2", function (d, i) {
-                return (isRow || tableCnt === 1 ? xWidth * tableNo + xWidth : xWidth);
-              }) 
-           .attr("y2", function (d, i) {
-                return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 : (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 + yHeight * tableNo);
-              })
-
-           .attr("stroke-width", 1)
-           .attr("stroke", "black");
-          
-         tableNo++;
-       } 
+          }); 
+        tableNo++;
+      } 
     });
   }
 
