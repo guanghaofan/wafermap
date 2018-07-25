@@ -16,8 +16,9 @@ VisTypesRegistryProvider.register(function (Private) {
     name: 'wafermap',
     title: 'wafer map',
     image,
-    description: 'A group of words, sized according to their importance',
+    description: 'Wafer Map to show the wafer testing data',
     category: CATEGORY.OTHER,
+    stage: 'lab',
     visConfig: {
       defaults: {
         scale: 'linear',
@@ -40,7 +41,7 @@ VisTypesRegistryProvider.register(function (Private) {
         {
           group: 'metrics',
           name: 'metric',
-          title: 'Tag Size',
+          title: 'Value',
           min: 1,
           max: 1,
           aggFilter: ['!std_dev', '!percentiles', '!percentile_ranks', '!derivative', '!geo_bounds', '!geo_centroid'],
@@ -52,7 +53,7 @@ VisTypesRegistryProvider.register(function (Private) {
           group: 'buckets',
           name: 'x-coord',
           //icon: 'fa fa-cloud',
-          title: 'x-coord',
+          title: 'X-Coord',
           min: 1,
           max: 1,
           aggFilter: ['terms']
@@ -61,8 +62,16 @@ VisTypesRegistryProvider.register(function (Private) {
           group: 'buckets',
           name: 'y-coord',
           //icon: 'fa fa-cloud',
-          title: 'y-coord',
+          title: 'Y-Coord',
           min: 1,
+          max: 1,
+          aggFilter: ['terms']
+        },
+        {
+          group: 'buckets',
+          name: 'split',
+          title: 'Split Chart',
+          min: 0,
           max: 1,
           aggFilter: ['terms']
         }
