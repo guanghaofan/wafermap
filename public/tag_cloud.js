@@ -142,17 +142,7 @@ class TagCloud extends EventEmitter {
     this._completedJob = null;
     const job = await this._pickPendingJob();
     if (job.words.length) {
-      if (job.refreshLayout) {
-        await this._updateLayout(job);
-      }
       await this._updateDOM(job);
-      const cloudBBox = this._svgGroup[0][0].getBBox();
-      this._cloudWidth = cloudBBox.width;
-      this._cloudHeight = cloudBBox.height;
-      this._allInViewBox = cloudBBox.x >= 0 &&
-        cloudBBox.y >= 0 &&
-        cloudBBox.x + cloudBBox.width <= this._element.offsetWidth &&
-        cloudBBox.y + cloudBBox.height <= this._element.offsetHeight;
     } else {
       this._emptyDOM(job);
     }
@@ -270,7 +260,7 @@ class TagCloud extends EventEmitter {
       const yBase = this._element.offsetHeight - this._marginBottom - this._marginTop;      
       while (tableNo !== tableCnt) {
      
-        if (showGrid) {
+        if (this._showGrid) {
           var yLines = this._svgGroup.selectAll("line-" + tableNo)
             .data(this._x)
             .enter()
