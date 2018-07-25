@@ -209,25 +209,27 @@ class TagCloud extends EventEmitter {
       let cellWidth = 0;
       let chartWidth = 0; // = xWidth - neighbor
       let chartHeight = 0;
-      let spaceCellCnt = 1.5;
-      if (tableCnt === 1) {
-        cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) / (this._y.length + spaceCellCnt);
-        cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / (this._x.length + spaceCellCnt);
-      }
-      else {
+      let spaceCellCnt = 0.5;
+      let showGrid = true;
+      
+      
         if (this._row) {
           cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) / (this._y.length + spaceCellCnt);
           cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight - (tableCnt - 1) * this._marginNeighbor) / ((this._x.length + spaceCellCnt) * tableCnt);
           xWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight - (tableCnt - 1) * this._marginNeighbor) / tableCnt + this._marginNeighbor;
           chartWidth = xWidth - this._marginNeighbor;
+          yHeight = this._element.offsetHeight - this._marginTop - this._marginBottom;
+          chartHeight = yHeight;
        }
         else {
           cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom - (tableCnt - 1) * this._marginNeighbor) /((this._y.length + spaceCellCnt) * tableCnt);
           cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / (this._x.length + spaceCellCnt);
           yHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom - (tableCnt - 1) * this._marginNeighbor) /tableCnt + this._marginNeighbor;
           chartHeight = yHeight - this._marginNeighbor;
+          xWidth = this._element.offsetWidth - this._marginLeft - this._marginRight;
+          chartWidth = xWidth;
         }
-      }
+      
      
        
       this._emptyDOM();
@@ -255,17 +257,69 @@ class TagCloud extends EventEmitter {
       var colorScale = d3.scale.linear()
         .domain([this._minZ, this._maxZ])
         .range(["#2980B9", "#E67E22", "#27AE60", "#27AE60"]);
-
+ 
       let tableNo = 0;
       const isRow = this._row;
       const yBase = this._element.offsetHeight - this._marginBottom - this._marginTop;      
       while (tableNo !== tableCnt) {
+     
+        if (showGrid) {
+          var yLines = this._svgGroup.selectAll("line-" + tableNo)
+            .data(this._x)
+            .enter()
+            .append("line");
+
+          yLines
+           .attr("x1", function (d, i) {
+                return (isRow || tableCnt === 1 ? tableNo * xWidth + (i + 0.5) * cellWidth + (spaceCellCnt * cellWidth) / 2 : (i + 0.5) * cellWidth + (cellWidth * spaceCellCnt) / 2);
+              })
+           .attr("y1", function (d, i) {
+                return (isRow || tableCnt === 1 ? yBase : ((tableNo === tableCnt - 1) ? yBase :
+                  tableNo * yHeight + chartHeight));
+             })
+           .attr("x2", function (d, i) {
+                return (isRow || tableCnt === 1 ? tableNo * xWidth + (i + 0.5) * cellWidth + (spaceCellCnt * cellWidth) / 2 : (i + 0.5) * cellWidth + (cellWidth * spaceCellCnt) / 2);
+              })
+ 
+           .attr("y2", function (d, i) {
+                return (isRow || tableCnt === 1 ? yBase - chartHeight : ((tableNo === tableCnt - 1) ? yBase - chartHeight :
+                  tableNo * yHeight));
+             })
+           .attr("stroke-width", 1)
+           .attr("stroke", "black");
+         
+          var xLines = this._svgGroup.selectAll("line-" + tableNo)
+            .data(this._y)
+            .enter()
+            .append("line");
+
+          xLines
+           .attr("x1", function (d, i) {
+                return (isRow || tableCnt === 1 ? xWidth * tableNo : 0);
+             })
+           .attr("y1", function (d, i) {
+                return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 : (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 + yHeight * tableNo);
+              })
+
+           .attr("x2", function (d, i) {
+                return (isRow || tableCnt === 1 ? xWidth * tableNo + xWidth : xWidth);
+              })
+           .attr("y2", function (d, i) {
+                return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 : (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 + yHeight * tableNo);
+              })
+
+           .attr("stroke-width", 1)
+           .attr("stroke", "black");
+        } 
+  
         // Always show the first y label and last x
         if (tableNo === tableCnt - 1 || this._row || this._showColumnX) {
           var xLabels = this._svgGroup.selectAll("xLabel-" + tableNo)
             .data(this._x)
             .enter().append("text")
               .text(function (d) { return d; })
+              .style("text-anchor", "middle")
+              .attr("dy", ".5em")
               .attr("x", function (d, i) {
                 return (isRow || tableCnt === 1 ? tableNo * xWidth + (i + 0.5) * cellWidth + (spaceCellCnt * cellWidth) / 2 : (i + 0.5) * cellWidth + (cellWidth * spaceCellCnt) / 2); 
               }) 
@@ -280,6 +334,7 @@ class TagCloud extends EventEmitter {
             .enter().append("text")
               .text(function (d) { return d; })
               .style("text-anchor", "end")
+              .attr("dy", ".5em")
               .attr("x",  function (d, i) {
                 return (isRow || tableCnt === 1 ? xWidth * tableNo : 0);
               })
@@ -304,6 +359,31 @@ class TagCloud extends EventEmitter {
           .attr('fill', function(d) {
             return colorScale(d[2]);
           });
+
+                      
+          var xLines = this._svgGroup.selectAll("line-" + tableNo)
+          .data(this._y)
+          .enter()
+          .append("line");
+
+          xLines
+           .attr("x1", function (d, i) {
+                return (isRow || tableCnt === 1 ? xWidth * tableNo : 0);
+             })
+           .attr("y1", function (d, i) {
+                return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 : (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 + yHeight * tableNo);
+              })
+
+           .attr("x2", function (d, i) {
+                return (isRow || tableCnt === 1 ? xWidth * tableNo + xWidth : xWidth);
+              }) 
+           .attr("y2", function (d, i) {
+                return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 : (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 + yHeight * tableNo);
+              })
+
+           .attr("stroke-width", 1)
+           .attr("stroke", "black");
+          
          tableNo++;
        } 
     });
