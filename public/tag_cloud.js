@@ -58,171 +58,19 @@ class TagCloud extends EventEmitter {
     this._xTitle = null;
     this._yTitle = null;
     this._row = null;
+    this._series = false;
+    this._showRowY = false;
+    this._showColumnX = false;
+
     //UTIL
     this._setTimeoutId = null;
     this._pendingJob = null;
     this._layoutIsUpdating = null;
     this._allInViewBox = false;
     this._DOMisUpdating = false;
-    
-     this._demoData = [
-           {
-            "x": 0,
-            "y" : 0,
-            "z": 6
-           },
-           {
-            "x": 0,
-            "y" : 7,
-            "z": 6
-           },
-           {
-            "x": 2,
-            "y" : 7,
-            "z": 17
-           },
-           {
-            "x": 0,
-            "y" : 1,
-            "z": 6
-           },
-            {
-            "x": 1,
-            "y" : 0,
-            "z": 6
-           },
-           {
-            "x": 5,
-            "y" : 0,
-            "z": 1
-           },
-           {
-            "x": 6,
-            "y" : 0,
-            "z": 3
-           },
-           {
-            "x": 6,
-            "y" : 6,
-            "z": 2
-           },
-           {
-            "x": 0,
-            "y" : 6,
-            "z": 5
-           },
-           {
-            "x": 1,
-            "y" : 1,
-            "z": 6
-           },
-            {
-            "x": 1,
-            "y" : 2,
-            "z": 5
-           },
-           {
-            "x": 1,
-            "y" : 3,
-            "z": 4
-           },
-           {
-            "x": 1,
-            "y" : 4,
-            "z": 4
-           },
-            {
-            "x": 1,
-            "y" : 5,
-            "z": 6
-           },
-            {
-            "x": 1,
-            "y" : 6,
-            "z": 1
-           },
-            {
-            "x": 2,
-            "y" : 1,
-            "z": 6
-           },
-            {
-            "x": 2,
-            "y" : 2,
-            "z": 6
-           },
-            {
-            "x": 2,
-            "y" : 3,
-            "z": 3
-           },
-            {
-            "x": 2,
-            "y" : 4,
-            "z": 1
-           },
-            {
-            "x": 2,
-            "y" : 5,
-            "z": 13
-           },
-            {
-            "x": 2,
-            "y" : 6,
-            "z": 14
-           },
-            {
-            "x": 3,
-            "y" : 3,
-            "z": 4
-           },
-            {
-            "x": 3,
-            "y" : 4,
-            "z": 2
-           },
-          {
-            "x": 3,
-            "y" : 5,
-            "z": 1
-           }, {
-            "x": 3,
-            "y" : 6,
-            "z": 6
-           },
-            {
-            "x": 4,
-            "y" : 1,
-            "z": 10
-           },
-            {
-            "x": 4,
-            "y" : 2,
-            "z": 20
-           },
-            {
-            "x": 4,
-            "y" : 3,
-            "z": 1
-           },
-            {
-            "x": 4,
-            "y" : 4,
-            "z": 1
-           },
-            {
-            "x": 4,
-            "y" : 5,
-            "z": 4
-           },
-            {
-            "x": 4,
-            "y" : 6,
-            "z": 3
-           }
-          ];
-    this._x = [0, 1, 2, 3, 4, 5, 6];
-    this._y = [0, 1, 2, 3, 4, 5, 6];
+     
+    this._x = null;
+    this._y = null;
   }
 
   setOptions(options) {
@@ -238,13 +86,16 @@ class TagCloud extends EventEmitter {
     this._invalidate(false);
   }
   
-  setData(minZ, maxZ, x, y, data, row) {
+  setData(minZ, maxZ, x, y, data, row, series) {
+    //this._x = [];
+    //this._y = [];
     this._minZ = minZ;
     this._maxZ = maxZ;
     this._x = x;
     this._y = y;
     this._words = data;
     this._row = row;
+    this._series =series;
     //this._xTitle = xTitle;
     //this._yTitle = yTitle;
   }
@@ -343,9 +194,12 @@ class TagCloud extends EventEmitter {
     }
 
     this._DOMisUpdating = true;
+    
+    /**
     const affineTransform = positionWord.bind(null, this._element.offsetWidth / 2, this._element.offsetHeight / 2);
     const svgTextNodes = this._svgGroup.selectAll('text');
     const stage = svgTextNodes.data(job.words, getText);
+    **/
 
     await new Promise((resolve) => {
       const tableCnt = this._words.length;
@@ -353,20 +207,25 @@ class TagCloud extends EventEmitter {
       let yHeight = 0; // column mode for y coord
       let cellHeight = 0;
       let cellWidth = 0;
+      let chartWidth = 0; // = xWidth - neighbor
+      let chartHeight = 0;
+      let spaceCellCnt = 1.5;
       if (tableCnt === 1) {
-        cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) /(this._y.length);
-        cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / (this._x.length);
+        cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) / (this._y.length + spaceCellCnt);
+        cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / (this._x.length + spaceCellCnt);
       }
       else {
         if (this._row) {
-          cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) /(this._y.length);
-          cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight - (tableCnt - 1) * this._marginNeighbor) / (this._x.length * tableCnt);
+          cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) / (this._y.length + spaceCellCnt);
+          cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight - (tableCnt - 1) * this._marginNeighbor) / ((this._x.length + spaceCellCnt) * tableCnt);
           xWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight - (tableCnt - 1) * this._marginNeighbor) / tableCnt + this._marginNeighbor;
+          chartWidth = xWidth - this._marginNeighbor;
        }
         else {
-          cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom - (tableCnt - 1) * this._marginNeighbor) /(this._y.length * tableCnt);
-          cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / this._x.length;
+          cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom - (tableCnt - 1) * this._marginNeighbor) /((this._y.length + spaceCellCnt) * tableCnt);
+          cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / (this._x.length + spaceCellCnt);
           yHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom - (tableCnt - 1) * this._marginNeighbor) /tableCnt + this._marginNeighbor;
+          chartHeight = yHeight - this._marginNeighbor;
         }
       }
      
@@ -401,38 +260,44 @@ class TagCloud extends EventEmitter {
       const isRow = this._row;
       const yBase = this._element.offsetHeight - this._marginBottom - this._marginTop;      
       while (tableNo !== tableCnt) {
-        var xLabels = this._svgGroup.selectAll("xLabel-" + tableNo)
-          .data(this._x)
-          .enter().append("text")
-            .text(function (d) { return d; })
-            .attr("x", function (d, i) {
-              return (isRow || tableCnt === 1 ? tableNo * xWidth + (i + 0.5) * cellWidth : (i + 0.5) * cellWidth); 
-            }) 
-            .attr("y", function (d, i) {
-              return (isRow || tableCnt === 1 ? yBase + 0.5 * cellHeight :
-                tableNo * yHeight + yBase + 0.5 * cellHeight);
-           });
+        // Always show the first y label and last x
+        if (tableNo === tableCnt - 1 || this._row || this._showColumnX) {
+          var xLabels = this._svgGroup.selectAll("xLabel-" + tableNo)
+            .data(this._x)
+            .enter().append("text")
+              .text(function (d) { return d; })
+              .attr("x", function (d, i) {
+                return (isRow || tableCnt === 1 ? tableNo * xWidth + (i + 0.5) * cellWidth + (spaceCellCnt * cellWidth) / 2 : (i + 0.5) * cellWidth + (cellWidth * spaceCellCnt) / 2); 
+              }) 
+              .attr("y", function (d, i) {
+                return (isRow || tableCnt === 1 ? yBase : ((tableNo === tableCnt - 1) ? yBase :
+                  tableNo * yHeight + chartHeight));
+             });
+        }
+        if (tableNo === 0 || (!this._row) || this._showRowY) {
         var yLabels = this._svgGroup.selectAll(".yLabel-" + tableNo)
-          .data(this._y)
-          .enter().append("text")
-            .text(function (d) { return d; })
-            .attr("x",  function (d, i) {
-              return (isRow || tableCnt === 1 ? yHeight * tableNo : 0);
-            })
-            .attr("y", function (d, i) {
-              return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight : (i + 0.5) * cellHeight + yHeight * tableNo); 
-            });
+            .data(this._y)
+            .enter().append("text")
+              .text(function (d) { return d; })
+              .style("text-anchor", "end")
+              .attr("x",  function (d, i) {
+                return (isRow || tableCnt === 1 ? xWidth * tableNo : 0);
+              })
+              .attr("y", function (d, i) {
+                return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 : (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 + yHeight * tableNo); 
+              });
+        }
         var rectangles = this._svgGroup.selectAll("rect-" + tableNo)
-          .data(tableCnt === 1 ? this._words[tableNo].rows : this._words[tableNo].tables["0"].rows)
+          .data(this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows)
           .enter()
           .append("rect");
 
         rectangles
           .attr("x", function (d) {
-             return (isRow || tableCnt === 1 ? d[0] * cellWidth + tableNo * xWidth : d[0] * cellWidth); 
+             return (isRow || tableCnt === 1 ? d[0] * cellWidth + (spaceCellCnt * cellWidth) / 2 + tableNo * xWidth : d[0] * cellWidth + (spaceCellCnt * cellWidth / 2)); 
           })
           .attr("y", function(d) {
-            return (isRow || tableCnt === 1 ? d[1] * cellHeight : d[1] * cellHeight + tableNo * yHeight);
+            return (isRow || tableCnt === 1 ? d[1] * cellHeight + (cellHeight * spaceCellCnt) / 2 : d[1] * cellHeight + (cellHeight * spaceCellCnt) / 2 + tableNo * yHeight);
           })
           .attr("width", cellWidth)
           .attr("height", cellHeight)
@@ -441,105 +306,6 @@ class TagCloud extends EventEmitter {
           });
          tableNo++;
        } 
-  
-       
-      /*
-       
-      var yLabels = this._svgGroup.selectAll(".dayLabel")
-          .data(this._y)
-          .enter().append("text")
-            .text(function (d) { return d; })
-            .attr("x", 0)
-            .attr("y", function (d, i) { return (i + 1) * cellHeight; });
-     var xLabels = this._svgGroup.selectAll(".timeLabel")
-          .data(this._x)
-          .enter().append("text")
-            .text(function(d) { return d; })
-            .attr("x",  function (d, i) { return (i + 1) * cellWidth; })
-            .attr("y", this._element.offsetHeight - this._marginBottom - cellHeight);
-    var rectangles = this._svgGroup.selectAll("rect")
-      .data(this._words)
-      .enter()
-      .append("rect");
-
-    rectangles
-    .attr("x", function (d){ return (d[0] +1 ) * cellWidth - 0.5*cellWidth; })
-    .attr("y", function(d){
-      return ( d[1] + 1 ) * cellHeight - 0.5*cellHeight;
-    })
-    .attr("width", cellWidth)
-    .attr("height", cellHeight)
-    //.transition().duration(100).style("fill", function(d){ return colorScale(d[2]); })
-    .attr('fill', function(d) { return colorScale(d[2]); });
-    ;
-    
-
-    */
-
-         
-
-
-
-
-      const enterSelection = stage.enter();
-      const enteringTags = enterSelection.append('text');
-      enteringTags.style('font-size', getSizeInPixels);
-      enteringTags.style('font-style', this._fontStyle);
-      enteringTags.style('font-weight', () => this._fontWeight);
-      enteringTags.style('font-family', () => this._fontFamily);
-      enteringTags.style('fill', getFill);
-      enteringTags.attr('text-anchor', () => 'middle');
-      enteringTags.attr('transform', affineTransform);
-      enteringTags.attr('data-test-subj', getDisplayText);
-      enteringTags.text(getDisplayText);
-
-      const self = this;
-      enteringTags.on({
-        click: function (event) {
-          self.emit('select', event.rawText);
-        },
-        mouseover: function () {
-          d3.select(this).style('cursor', 'pointer');
-        },
-        mouseout: function () {
-          d3.select(this).style('cursor', 'default');
-        }
-      });
-
-      const movingTags = stage.transition();
-      movingTags.duration(600);
-      movingTags.style('font-size', getSizeInPixels);
-      movingTags.style('font-style', this._fontStyle);
-      movingTags.style('font-weight', () => this._fontWeight);
-      movingTags.style('font-family', () => this._fontFamily);
-      movingTags.attr('transform', affineTransform);
-
-      const exitingTags = stage.exit();
-      const exitTransition = exitingTags.transition();
-      exitTransition.duration(200);
-      exitingTags.style('fill-opacity', 1e-6);
-      exitingTags.attr('font-size', 1);
-      exitingTags.remove();
-
-      let exits = 0;
-      let moves = 0;
-      const resolveWhenDone = () => {
-        if (exits === 0 && moves === 0) {
-          this._DOMisUpdating = false;
-          resolve(true);
-        }
-      };
-      exitTransition.each(() => exits++);
-      exitTransition.each('end', () => {
-        exits--;
-        resolveWhenDone();
-      });
-      movingTags.each(() => moves++);
-      movingTags.each('end', () => {
-        moves--;
-        resolveWhenDone();
-      });
-
     });
   }
 
@@ -586,7 +352,7 @@ class TagCloud extends EventEmitter {
 
     this._updateContainerSize();
 
-    const canReuseLayout = keepLayout && !this._isJobRunning() && this._completedJob;
+    const canReuseLayout = false;
     this._pendingJob = (canReuseLayout) ? this._makeJobPreservingLayout() : this._makeNewJob();
     this._processPendingJob();
   }
