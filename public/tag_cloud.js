@@ -61,7 +61,8 @@ class TagCloud extends EventEmitter {
     this._series = false;
     this._showRowY = false;
     this._showColumnX = false;
-
+    this._colorBucket = 10;
+    this._colors = new Array(this._colorBucket);
     //UTIL
     this._setTimeoutId = null;
     this._pendingJob = null;
@@ -351,13 +352,65 @@ class TagCloud extends EventEmitter {
           .attr("y", function(d) {
             return (isRow || tableCnt === 1 ? d[1] * cellHeight + (cellHeight * spaceCellCnt) / 2 : d[1] * cellHeight + (cellHeight * spaceCellCnt) / 2 + tableNo * yHeight);
           })
+          .on("mouseover", function(d) {
+            d3.select(this).classed("cell-hover",true);
+            //Update the tooltip position and value
+               d3.select("#tooltip")
+                 .style("left", (d3.event.pageX+10) + "px")
+                 .style("top", (d3.event.pageY-10) + "px")
+                 .select("#value")
+                 .text("x:" + d[0] + "\ny:"+d[1] + "\nvalue:" + d[2]);  
+               //Show the tooltip
+               d3.select("#tooltip").classed("hidden", false);
+          })
+          .on("mouseout", function(d) {
+            d3.select(this).classed("cell-hover",false);
+            d3.select("#tooltip").classed("hidden", true);
+          })
+    
+
           .attr("width", cellWidth)
           .attr("height", cellHeight)
           .attr('fill', function(d) {
             return colorScale(d[2]);
           }); 
         tableNo++;
-      } 
+      }
+      
+      // add the color legend
+      
+      const legendWidth = 20;      
+      const dis = (this._maxZ - this._minZ) / this._colorBucket;
+      let colorNo = 0;
+      const legendHeight = chartHeight / (2 * (this._colorBucket + 1));
+      while (colorNo != this._colorBucket + 1) {
+        this._colors[colorNo] = num2e(this._minZ + dis * colorNo);
+        colorNo++;
+      }
+      
+      var legendLabels = this._svgGroup.selectAll("legendLabel")
+          .data(this._colors)
+          .enter().append("text")
+            .text(function (d) { return d; })
+            .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 10)
+            .attr("y", function (d, i) { return (i + 1.5) * legendHeight; })
+            .style("text-anchor", "end"); 
+      
+      var legendRect = this._svgGroup.selectAll("legendRect")
+        .data(this._colors)
+        .enter()
+        .append("rect"); 
+
+      legendRect
+        .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 10)
+        .attr("y", function (d, i) { return (i +1) * legendHeight; })
+        .attr("width", legendWidth)
+        .attr("height", legendHeight)
+        .style("fill", function(d){ 
+          return colorScale(d); 
+        });
+       
+
     });
   }
 
@@ -513,5 +566,16 @@ function hashWithinRange(str, max) {
   }
   return Math.abs(hash) % max;
 }
+
+ 
+function num2e(num){
+    var p = Math.floor(Math.log(num)/Math.LN10);
+    var n = num * Math.pow(10, -p);
+    return n.toFixed(4) + 'e' + p;
+}
+
+
+
+
 
 export default TagCloud;
