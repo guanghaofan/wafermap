@@ -8,9 +8,10 @@
       <label>
         <input type="checkbox" value="{{hideLabel}}" ng-model="vis.params.reverseColor" name="reverseColor"
                ng-checked="vis.params.reverseColor">
-        Reverse Color
+        Show Label
       </label>
     </div>
+
     <div>
       <label>
         <input type="checkbox" value="{{hideLabel}}" ng-model="vis.params.showLabel" name="showLabel"

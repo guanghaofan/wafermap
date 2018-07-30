@@ -24,8 +24,8 @@ export class TagCloudVisualization {
     this._marginTop = 20;
     this._marginBottom = 50;
     this._marginLeft = 50;
-    this._marginRight = 110;
-    this._marginNeighbor = 30;
+    this._marginRight = 50;
+    this._marginNeighbor = 50;
     this._tagCloud = new TagCloud(cloudContainer, this._marginLeft, this._marginRight, this._marginTop, this._marginBottom, this._marginNeighbor);
     this._tagCloud.on('select', (event) => {
       if (!this._bucketAgg) {
@@ -46,19 +46,12 @@ export class TagCloudVisualization {
     this._labelNode = document.createElement('div');
     this._containerNode.appendChild(this._labelNode);
     this._label = render(<Label />, this._labelNode);
-
-    /**
-    this._tooltip = document.createElement('div');
-    this._containerNode.appendChild(this._tooltip); 
-    **/
-
+    
     this._series = false;
     this._row = false;
     this._tableCnt = 0;
     this._mapHeight = 20;
     this._mapWidth = 20;
-    this._maxX = 1;
-    this._maxY = 1;
   }
 
   async render(data, status) {
@@ -72,7 +65,7 @@ export class TagCloudVisualization {
       this._isEmptyData = true;
     } 
     this._tableCnt = data.tables.length;
-    if ((!this._isEmptyData) && this._validateBucket()) {
+    if (this._validateBucket() && (!this._isEmptyData)) {
       if (status.params || status.aggs) {
         this._updateParams();
       }
@@ -91,22 +84,20 @@ export class TagCloudVisualization {
     this._feedbackMessage.setState({
       shouldShowInvalidBucketCnt: this._isErrorBucket,
       shouldShowIncomplete: this._isSmallSize,
-      shouldShowEmptyData: this._isEmptyData,
+      shouldShowEmptyData: this._isEmptyData
     });
-
-
 
     if (this._isEmptyData || this._isErrorBucket || this._isSmallSize) {
      this._tagCloud._emptyDOM();
      return;
     }
+
+    await this._renderComplete$.take(1).toPromise();
+
     this._label.setState({
       label: `${this._vis.aggs[0].makeLabel()} - ${this._vis.aggs[1].makeLabel()}`,
       shouldShowLabel: this._vis.params.showLabel
     });
-  
-    await this._renderComplete$.take(1).toPromise();
-   
   }
 
 
@@ -119,18 +110,18 @@ export class TagCloudVisualization {
   _validateCellSize() {
     if (this._series) {
       if ((this._row
-         && ((this._containerNode.clientWidth - this._marginLeft - this._marginRight - (this._tableCnt - 1) * this._marginNeighbor) / (this._tableCnt * this._maxX) < this._mapWidth
-           || (this._containerNode.clientHeight - this._marginTop - this._marginBottom) / this._maxY < this._mapHeight))
+         && ((this._containerNode.clientWidth - this._marginLeft - this._marginRight - (this._tableCnt - 1) * this._marginNeighbor) / (this._tableCnt * this._x.length) < this._mapWidth
+           || (this._containerNode.clientHeight - this._marginTop - this._marginBottom) / this._y.length < this._mapHeight))
          || ((!this._row)
-           && ((this._containerNode.clientHeight -  this._marginTop - this._marginBottom - (this._tableCnt - 1) * this._marginNeighbor) / (this._tableCnt * this._maxY) < this._mapHeight
-            || (this._containerNode.clientWidth - this._marginLeft - this._marginRight) / this._maxX < this._mapWidth))) {
+           && ((this._containerNode.clientHeight -  this._marginTop - this._marginBottom - (this._tableCnt - 1) * this._marginNeighbor) / (this._tableCnt * this._y.length) < this._mapHeight
+            || (this._containerNode.clientWidth - this._marginLeft - this._marginRight) / this._x.length < this._mapWidth))) {
         this._isSmallSize = true;
         return false;
       }
     }
     else {
-      if ((this._containerNode.clientHeight - this._marginTop - this._marginBottom) / this._maxY < this._mapHeight
-         || (this._containerNode.clientWidth - this._marginLeft - this._marginRight) / this._maxX < this._mapWidth) {
+      if ((this._containerNode.clientHeight - this._marginTop - this._marginBottom) / this._y.length < this._mapHeight
+         || (this._containerNode.clientWidth - this._marginLeft - this._marginRight) / this._x.length < this._mapWidth) {
         this._isSmallSize = true;
         return false;
       }
@@ -168,7 +159,7 @@ export class TagCloudVisualization {
     }
 
     if (bucketCnt < 2 || metricCnt != 1 || (this._series && bucketCnt != 3)
-       || (this._series && seriesBucketNo !== 1)) {
+       || (this._series && seriesBucketNo !== 0)) {
       this._isErrorBucket = true;
       return false;
     }
@@ -192,7 +183,7 @@ export class TagCloudVisualization {
  
     while (tableNo !== this._tableCnt) {
       let chartData;
-      if (this._tableCnt > 1 || this._series) {
+      if (this._tableCnt > 1) {
         var temp  = response.tables[tableNo].tables["0"];
         chartData = temp.rows;
       }
@@ -218,20 +209,19 @@ export class TagCloudVisualization {
       }
       tableNo++;
     }
-    this._maxX = maxX + 1; 
-    this._maxY = maxY + 1;  
+    
     rowNo = 0;
-    let y = new Array(this._maxY);
-    let x = new Array(this._maxX);
-    while (rowNo != this._maxY) {
+    let y = new Array(maxY + 1);
+    let x = new Array(maxX + 1);
+    while (rowNo != maxY + 1) {
       y[rowNo] = rowNo;
       rowNo ++;
     }
     columnNo = 0;
-    while (columnNo != this._maxX) {
+    while (columnNo != maxX + 1) {
       x[columnNo] = columnNo;
       columnNo++;
     }
-    this._tagCloud.setData(minZ, maxZ, x, y, response.tables, this._row, this._series);
+    this._tagCloud.setData(minZ, maxZ, x, y, response.tables, this._row);
   }
 }

@@ -1,5 +1,5 @@
 import './tag_cloud.less';
-import './tag_cloud_vis_params';
+import './wafer_map_vis_params.html';
 import { VisFactoryProvider } from 'ui/vis/vis_factory';
 import { CATEGORY } from 'ui/vis/vis_category';
 import { Schemas } from 'ui/vis/editors/default/schemas';
@@ -21,8 +21,8 @@ VisTypesRegistryProvider.register(function (Private) {
     stage: 'lab',
     visConfig: {
       defaults: {
+        revertColor: false,
         colorSchema: 'green-red',
-        reverseColor: false,
         showLabel: true
       }
     },
@@ -31,7 +31,7 @@ VisTypesRegistryProvider.register(function (Private) {
     responseHandler: 'tabify',
     editorConfig: {
       collections: {
-        colorSchemas: ['green-red', 'log', 'square root'],
+        colorSchemas: ['green-red', 'green-yellow', 'red-blue', 'red-yellow-green', 'red-yellow-blue','yellow-orange-red'],
       },
       optionsTemplate: '<wafermap-vis-params></wafermap-vis-params>',
       schemas: new Schemas([

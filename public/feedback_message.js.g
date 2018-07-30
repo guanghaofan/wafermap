@@ -10,8 +10,8 @@ export class FeedbackMessage extends Component {
   render() {
     return (
       <div className="tagcloud-notifications" >
-        <div className="tagcloud-truncated-message" style={{ display: this.state.shouldShowEmptyData ? 'block' : 'none' }}>
-          Empty Data.
+        <div className="tagcloud-truncated-message" style={{ display: this.state.shouldShowTruncate ? 'block' : 'none' }}>
+          Empty Data in your query.
         </div>
         <div className="tagcloud-incomplete-message" style={{ display: this.state.shouldShowIncomplete ? 'block' : 'none' }}>
           The container is too small to display the entire wafer map series. Wafer maps might be cropped or omitted if the cell width or height is less than 20.

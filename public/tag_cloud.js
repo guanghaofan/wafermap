@@ -308,8 +308,23 @@ class TagCloud extends EventEmitter {
 
            .attr("stroke-width", 1)
            .attr("stroke", "black");
-        } 
-  
+        }
+        /** 
+        if (this._series) {
+            // split series lable
+            this._svgGroup.select("series")
+              .data (this._words[tableNo].title)
+              .enter().append("text")
+                .text(this._words[tableNo].title)
+                .style("text-anchor", "middle")
+                .attr("x", 
+                  isRow ? xWidth * tableNo + chartWidth / 2 : 0
+                )
+                .attr("y", isRow ? yHeight : yHeight * tableNo + yHeight / 2);
+        }
+        **/
+
+        
         // Always show the first y label and last x
         if (tableNo === tableCnt - 1 || this._row || this._showColumnX) {
           var xLabels = this._svgGroup.selectAll("xLabel-" + tableNo)
@@ -325,9 +340,10 @@ class TagCloud extends EventEmitter {
                 return (isRow || tableCnt === 1 ? yBase : ((tableNo === tableCnt - 1) ? yBase :
                   tableNo * yHeight + chartHeight));
              });
-        }
+       }
+  
         if (tableNo === 0 || (!this._row) || this._showRowY) {
-        var yLabels = this._svgGroup.selectAll(".yLabel-" + tableNo)
+          var yLabels = this._svgGroup.selectAll(".yLabel-" + tableNo)
             .data(this._y)
             .enter().append("text")
               .text(function (d) { return d; })
@@ -339,6 +355,10 @@ class TagCloud extends EventEmitter {
               .attr("y", function (d, i) {
                 return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 : (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 + yHeight * tableNo); 
               });
+          // TODO add y-coord title
+          var yTitle = this._svgGroup.selectAll(".title-" + tableNo);
+          
+
         }
         var rectangles = this._svgGroup.selectAll("rect-" + tableNo)
           .data(this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows)
