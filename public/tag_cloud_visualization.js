@@ -7,7 +7,7 @@ import React from 'react';
 import { Label } from './label';
 import { FeedbackMessage } from './feedback_message';
 
-const MAX_TAG_COUNT = 200;
+//const MAX_TAG_COUNT = 200;
 
 export class TagCloudVisualization {
 
@@ -77,7 +77,7 @@ export class TagCloudVisualization {
         this._updateParams();
       }
 
-      if (status.data || status.resize) {
+      if (status.data || status.resize || status.params) {
         // we must update the data
         if (status.data) {
           this._generateData(data);

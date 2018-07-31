@@ -21,8 +21,9 @@ VisTypesRegistryProvider.register(function (Private) {
     stage: 'lab',
     visConfig: {
       defaults: {
-        colorSchema: 'green-red',
+        colorSchema: 'Green-Red',
         reverseColor: false,
+        addTooltip: false,
         showLabel: true
       }
     },
@@ -31,7 +32,8 @@ VisTypesRegistryProvider.register(function (Private) {
     responseHandler: 'tabify',
     editorConfig: {
       collections: {
-        colorSchemas: ['green-red', 'log', 'square root'],
+        colorSchemas: ['Green-Red', 'Green-Blue', 'Green-Yellow' , 'Green-Orange', 'Yellow-Pink', 'LightGreen-SkyBlue', 'DarkGreen-Brown', 'Green-Red-Yellow',
+                       'Green-Yellow-Blue', 'Green-Yellow-Red', 'Green-Yellow-Pink', 'Green-Red-Blue', 'Green-Pink-Yellow'],
       },
       optionsTemplate: '<wafermap-vis-params></wafermap-vis-params>',
       schemas: new Schemas([

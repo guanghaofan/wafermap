@@ -45,11 +45,10 @@ class TagCloud extends EventEmitter {
     this._padding = 5;
 
     //OPTIONS
-    this._orientation = 'single';
-    this._minFontSize = 10;
-    this._maxFontSize = 36;
-    this._textScale = 'linear';
-    this._optionsAsString = null;
+    this._colorSchema = 'green-red';
+    this._showLabel = false;
+    this._reverseColor = false;
+    this._addTooltip = false;
 
     //DATA
     this._words = null;
@@ -63,6 +62,7 @@ class TagCloud extends EventEmitter {
     this._showColumnX = false;
     this._colorBucket = 10;
     this._colors = new Array(this._colorBucket);
+    this._colorRange = null;
     //UTIL
     this._setTimeoutId = null;
     this._pendingJob = null;
@@ -81,11 +81,10 @@ class TagCloud extends EventEmitter {
       return;
     }
     this._optionsAsString = JSON.stringify(options);
-    this._orientation = options.orientation;
-    this._minFontSize = Math.min(options.minFontSize, options.maxFontSize);
-    this._maxFontSize = Math.max(options.minFontSize, options.maxFontSize);
-    this._textScale = options.scale;
-    this._invalidate(false);
+    this._showLabel = options.showLabel;
+    this._addTooptip = options.addTooltip;
+    this._colorSchema = options.colorSchema;
+    this._reverseColor = options.reverseColor;
   }
   
   setData(minZ, maxZ, x, y, data, row, series) {
@@ -251,16 +250,40 @@ class TagCloud extends EventEmitter {
         return (d.x +1 ) * cellWidth - 0.5*cellWidth + this._marginLeft;
       }
       */
+      
+      this._colorRange = (this._colorSchema === 'Green-Red' ? ["#008000", "#FF0000"] :
+                        this._colorSchema === 'Green-Blue' ? ["#008000", "#0000FF"] :
+                        this._colorSchema === 'Green-Yellow' ? ["#008000", "#FFFF00"] :
+                        this._colorSchema === 'Green-Orange' ? ["#008000", "#FFA500"] :
+                        this._colorSchema === 'Yellow-Pink' ? ["#FFFF00", "#FFC0CB"] :
+                        this._colorSchema === 'LightGreen-SkyBlue' ? ["#90EE90", "#87CEEB"] :
+                        this._colorSchema === 'DarkGreen-Brown' ? ["#006400", "#A52A2A"] :
+                        this._colorSchema === 'Green-Red-Yellow' ? ["#008000", "#FF0000", "#FFFF00"] :
+                        this._colorSchema === 'Green-Yellow-Blue' ? ["#008000", "#FFFF00", "#0000FF"] :
+                        this._colorSchema === 'Green-Yellow-Red' ? ["#008000", "#FFFF00", "#FF0000"] :
+                        this._colorSchema === 'Green-Yellow-Pink' ? ["#008000", "#FFFF00", "#FFC0CB"] :
+                        this._colorSchema === 'Green-Red-Blue' ? ["#008000", "#FF0000", "#0000FF"] :
+                        this._colorSchema === 'Green-Pink-Yellow' ? ["#008000", "#FFC0CB", "#FFFF00"] :
+                        ["#008000", "#FF0000"]
+      );
 
       var colorScale = d3.scale.linear()
-        .domain([this._minZ, this._maxZ])
-        .range(["#2980B9", "#E67E22", "#27AE60", "#27AE60"]);
- 
+        .domain(d3.range(0, 1, 1.0 / (this._colorRange.length)))
+        .range(this._colorRange);
+      var colorDomain = d3.scale.linear().domain([this._minZ,this._maxZ]).range([0,1]);
+
       let tableNo = 0;
+      const reverseColor = this._reverseColor;
       const isRow = this._row;
       const yBase = this._element.offsetHeight - this._marginBottom - this._marginTop;      
       while (tableNo !== tableCnt) {
-     
+        /** 
+        var colorDomain = d3.scale.linear().domain(d3.extent(this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows, function(d){
+            return d[2];
+          })).range([0,1]);
+        **/
+
+
         if (this._showGrid) {
           var yLines = this._svgGroup.selectAll("line-" + tableNo)
             .data(this._x)
@@ -392,7 +415,7 @@ class TagCloud extends EventEmitter {
           .attr("width", cellWidth)
           .attr("height", cellHeight)
           .attr('fill', function(d) {
-            return colorScale(d[2]);
+            return colorScale(reverseColor ? 1 -  colorDomain(d[2]) : colorDomain(d[2]));
           }); 
         tableNo++;
       }
@@ -427,7 +450,7 @@ class TagCloud extends EventEmitter {
         .attr("width", legendWidth)
         .attr("height", legendHeight)
         .style("fill", function(d){ 
-          return colorScale(d); 
+          return colorScale(reverseColor ? 1- colorDomain(d) : colorDomain(d)); 
         });
        
 
@@ -589,12 +612,20 @@ function hashWithinRange(str, max) {
 
  
 function num2e(num){
-    var p = Math.floor(Math.log(num)/Math.LN10);
+    if (num ===0) {
+      return '0';
+    }
+    
+    var p = Math.floor(Math.log(Math.abs(num))/Math.LN10);
     var n = num * Math.pow(10, -p);
-    return n.toFixed(4) + 'e' + p;
+    return (n.toFixed(4) + 'e' + p);
 }
 
-
+function getColorValue(reverse) {
+  if (!reverse) {
+    return 
+  }
+}
 
 
 
