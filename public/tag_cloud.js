@@ -291,6 +291,7 @@ class TagCloud extends EventEmitter {
             .append("line");
 
           yLines
+           .attr('class', 'grid')
            .attr("x1", function (d, i) {
                 return (isRow || tableCnt === 1 ? tableNo * xWidth + (i + 0.5) * cellWidth + (spaceCellCnt * cellWidth) / 2 : (i + 0.5) * cellWidth + (cellWidth * spaceCellCnt) / 2);
               })
@@ -315,6 +316,7 @@ class TagCloud extends EventEmitter {
             .append("line");
 
           xLines
+           .attr('class', 'grid')
            .attr("x1", function (d, i) {
                 return (isRow || tableCnt === 1 ? xWidth * tableNo : 0);
              })
@@ -385,10 +387,10 @@ class TagCloud extends EventEmitter {
         }
         var rectangles = this._svgGroup.selectAll("rect-" + tableNo)
           .data(this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows)
-          .enter()
-          .append("rect");
+          .enter();
 
         rectangles
+          .append("rect")
           .attr("x", function (d) {
              return (isRow || tableCnt === 1 ? d[0] * cellWidth + (spaceCellCnt * cellWidth) / 2 + tableNo * xWidth : d[0] * cellWidth + (spaceCellCnt * cellWidth / 2)); 
           })
@@ -416,7 +418,40 @@ class TagCloud extends EventEmitter {
           .attr("height", cellHeight)
           .attr('fill', function(d) {
             return colorScale(reverseColor ? 1 -  colorDomain(d[2]) : colorDomain(d[2]));
-          }); 
+          });
+ 
+          if (this._showLabel) {
+            rectangles.append('text')
+            .text(function (d) {
+              return formatNum(d[2]);
+            })
+            .style('display', function (d) {
+              const textLength = this.getBBox().width;
+              const textHeight = this.getBBox().height;
+              const textTooLong = textLength > cellWidth;
+              const textTooWide = textHeight > cellHeight;
+              return textTooLong || textTooWide ? 'none' : 'initial';
+            })
+            .style('dominant-baseline', 'central')
+            .style('text-anchor', 'middle')
+            .style('fill', '#000000')
+            .attr("x", function (d) {
+               return (isRow || tableCnt === 1 ? d[0] * cellWidth + (spaceCellCnt * cellWidth) / 2 + cellWidth / 2 + tableNo * xWidth : d[0] * cellWidth + cellWidth / 2  + (spaceCellCnt * cellWidth / 2));
+            })
+            .attr("y", function(d) {
+              return (isRow || tableCnt === 1 ? d[1] * cellHeight + cellHeight / 2 + (cellHeight * spaceCellCnt) / 2 : d[1] * cellHeight + cellHeight / 2 + (cellHeight * spaceCellCnt) / 2 + tableNo * yHeight);
+            });
+          }
+
+          /**
+          .attr('transform', function (d) {
+            const horizontalCenter = x(d) + squareWidth / 2;
+            const verticalCenter = y(d) + squareHeight / 2;
+            return `rotate(${rotate},${horizontalCenter},${verticalCenter})`;
+          });
+          **/
+
+ 
         tableNo++;
       }
       
@@ -619,6 +654,10 @@ function num2e(num){
     var p = Math.floor(Math.log(Math.abs(num))/Math.LN10);
     var n = num * Math.pow(10, -p);
     return (n.toFixed(4) + 'e' + p);
+}
+
+function formatNum(num) {
+  return Math.round(num) === num ? num : num.toFixed(1); 
 }
 
 function getColorValue(reverse) {
