@@ -23,7 +23,7 @@ class TagCloud extends EventEmitter {
   constructor(domNode, marginLeft, marginRight, marginTop, marginBottom, marginNeighbor) {
 
     super();
-    
+
     //DOM
     this._marginLeft = marginLeft;
     this._marginBottom = marginBottom;
@@ -35,6 +35,13 @@ class TagCloud extends EventEmitter {
     this._svgGroup = this._d3SvgContainer.append('g')
         .attr("transform", "translate(" + this._marginLeft + "," + this._marginTop + ")");
     this._size = [1, 1];
+
+    this._tooltip = d3.select(this._element).append("div")
+      .attr("class", "tooltip")
+      .style("opacity", 0);
+
+
+
 
     //SETTING (non-configurable)
     this._fontFamily = 'Open Sans, sans-serif';
@@ -54,8 +61,8 @@ class TagCloud extends EventEmitter {
     this._words = null;
     this._minZ = 0;
     this._maxZ = 1;
-    this._xTitle = null;
-    this._yTitle = null;
+    //this._xTitle = null;
+    //this._yTitle = null;
     this._row = null;
     this._series = false;
     this._showRowY = false;
@@ -69,7 +76,7 @@ class TagCloud extends EventEmitter {
     this._layoutIsUpdating = null;
     this._allInViewBox = false;
     this._DOMisUpdating = false;
-     
+
     this._x = null;
     this._y = null;
     this._showGrid = false;
@@ -86,7 +93,7 @@ class TagCloud extends EventEmitter {
     this._colorSchema = options.colorSchema;
     this._reverseColor = options.reverseColor;
   }
-  
+
   setData(minZ, maxZ, x, y, data, row, series) {
     //this._x = [];
     //this._y = [];
@@ -100,7 +107,7 @@ class TagCloud extends EventEmitter {
     //this._xTitle = xTitle;
     //this._yTitle = yTitle;
   }
- 
+
   upateSVG() {
     this._invalidate(false);
   }
@@ -185,7 +192,7 @@ class TagCloud extends EventEmitter {
     }
 
     this._DOMisUpdating = true;
-    
+
     /**
     const affineTransform = positionWord.bind(null, this._element.offsetWidth / 2, this._element.offsetHeight / 2);
     const svgTextNodes = this._svgGroup.selectAll('text');
@@ -201,7 +208,7 @@ class TagCloud extends EventEmitter {
       let chartWidth = 0; // = xWidth - neighbor
       let chartHeight = 0;
       let spaceCellCnt = 0.5;
-      
+
       if (tableCnt === 1) {
         cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) / (this._y.length + spaceCellCnt);
         cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / ((this._x.length + spaceCellCnt) * tableCnt);
@@ -226,9 +233,9 @@ class TagCloud extends EventEmitter {
         xWidth = this._element.offsetWidth - this._marginLeft - this._marginRight;
         chartWidth = xWidth;
       }
-      
-     
-       
+
+
+
       this._emptyDOM();
       /**
       var cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) /(this._y.length + 2);
@@ -237,20 +244,20 @@ class TagCloud extends EventEmitter {
         return d[2];
       });
 
-   
+
       var colorScale = d3.scaleLinear()
         .domain(colorDomain)
         .range(["green","blue"]);
-   
+
       function x(d, i) {
         return (i + 1) * cellWidth + this._marginLeft;
       }
-   
+
       function rectx(d, i) {
         return (d.x +1 ) * cellWidth - 0.5*cellWidth + this._marginLeft;
       }
       */
-      
+
       this._colorRange = (this._colorSchema === 'Green-Red' ? ["#008000", "#FF0000"] :
                         this._colorSchema === 'Green-Blue' ? ["#008000", "#0000FF"] :
                         this._colorSchema === 'Green-Yellow' ? ["#008000", "#FFFF00"] :
@@ -272,12 +279,20 @@ class TagCloud extends EventEmitter {
         .range(this._colorRange);
       var colorDomain = d3.scale.linear().domain([this._minZ,this._maxZ]).range([0,1]);
 
+      var tooltip = this._tooltip;
+
       let tableNo = 0;
+      const metricTitle = this._series ? this._words[tableNo].tables["0"].columns[2].title : this._words[tableNo].columns[2].title;
+      const xTitle = this._series ? this._words[tableNo].tables["0"].columns[0].title : this._words[tableNo].columns[0].title;
+      const yTitle = this._series ? this._words[tableNo].tables["0"].columns[1].title : this._words[tableNo].columns[1].title;
+
+      const maxX = this._x.length - 1;
+      const maxY = this._y.length - 1;
       const reverseColor = this._reverseColor;
       const isRow = this._row;
-      const yBase = this._element.offsetHeight - this._marginBottom - this._marginTop;      
+      const yBase = this._element.offsetHeight - this._marginBottom - this._marginTop;
       while (tableNo !== tableCnt) {
-        /** 
+        /**
         var colorDomain = d3.scale.linear().domain(d3.extent(this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows, function(d){
             return d[2];
           })).range([0,1]);
@@ -302,14 +317,14 @@ class TagCloud extends EventEmitter {
            .attr("x2", function (d, i) {
                 return (isRow || tableCnt === 1 ? tableNo * xWidth + (i + 0.5) * cellWidth + (spaceCellCnt * cellWidth) / 2 : (i + 0.5) * cellWidth + (cellWidth * spaceCellCnt) / 2);
               })
- 
+
            .attr("y2", function (d, i) {
                 return (isRow || tableCnt === 1 ? yBase - chartHeight : ((tableNo === tableCnt - 1) ? yBase - chartHeight :
                   tableNo * yHeight));
              })
            .attr("stroke-width", 1)
            .attr("stroke", "black");
-         
+
           var xLines = this._svgGroup.selectAll("line-" + tableNo)
             .data(this._y)
             .enter()
@@ -334,7 +349,7 @@ class TagCloud extends EventEmitter {
            .attr("stroke-width", 1)
            .attr("stroke", "black");
         }
-        /** 
+        /**
         if (this._series) {
             // split series lable
             this._svgGroup.select("series")
@@ -342,14 +357,14 @@ class TagCloud extends EventEmitter {
               .enter().append("text")
                 .text(this._words[tableNo].title)
                 .style("text-anchor", "middle")
-                .attr("x", 
+                .attr("x",
                   isRow ? xWidth * tableNo + chartWidth / 2 : 0
                 )
                 .attr("y", isRow ? yHeight : yHeight * tableNo + yHeight / 2);
         }
         **/
 
-        
+
         // Always show the first y label and last x
         if (tableNo === tableCnt - 1 || this._row || this._showColumnX) {
           var xLabels = this._svgGroup.selectAll("xLabel-" + tableNo)
@@ -359,14 +374,14 @@ class TagCloud extends EventEmitter {
               .style("text-anchor", "middle")
               .attr("dy", ".5em")
               .attr("x", function (d, i) {
-                return (isRow || tableCnt === 1 ? tableNo * xWidth + (i + 0.5) * cellWidth + (spaceCellCnt * cellWidth) / 2 : (i + 0.5) * cellWidth + (cellWidth * spaceCellCnt) / 2); 
-              }) 
+                return (isRow || tableCnt === 1 ? tableNo * xWidth + (i + 0.5) * cellWidth + (spaceCellCnt * cellWidth) / 2 : (i + 0.5) * cellWidth + (cellWidth * spaceCellCnt) / 2);
+              })
               .attr("y", function (d, i) {
                 return (isRow || tableCnt === 1 ? yBase : ((tableNo === tableCnt - 1) ? yBase :
                   tableNo * yHeight + chartHeight));
              });
        }
-  
+
         if (tableNo === 0 || (!this._row) || this._showRowY) {
           var yLabels = this._svgGroup.selectAll(".yLabel-" + tableNo)
             .data(this._y)
@@ -378,11 +393,10 @@ class TagCloud extends EventEmitter {
                 return (isRow || tableCnt === 1 ? xWidth * tableNo : 0);
               })
               .attr("y", function (d, i) {
-                return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 : (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 + yHeight * tableNo); 
+                return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 : (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 + yHeight * tableNo);
               });
           // TODO add y-coord title
-          var yTitle = this._svgGroup.selectAll(".title-" + tableNo);
-          
+
 
         }
         var rectangles = this._svgGroup.selectAll("rect-" + tableNo)
@@ -392,38 +406,37 @@ class TagCloud extends EventEmitter {
         rectangles
           .append("rect")
           .attr("x", function (d) {
-             return (isRow || tableCnt === 1 ? d[0] * cellWidth + (spaceCellCnt * cellWidth) / 2 + tableNo * xWidth : d[0] * cellWidth + (spaceCellCnt * cellWidth / 2)); 
+             return (isRow || tableCnt === 1 ? d[0] * cellWidth + (spaceCellCnt * cellWidth) / 2 + tableNo * xWidth : d[0] * cellWidth + (spaceCellCnt * cellWidth / 2));
           })
           .attr("y", function(d) {
             return (isRow || tableCnt === 1 ? d[1] * cellHeight + (cellHeight * spaceCellCnt) / 2 : d[1] * cellHeight + (cellHeight * spaceCellCnt) / 2 + tableNo * yHeight);
           })
+
+          // add for tooltip
           .on("mouseover", function(d) {
-            d3.select(this).classed("cell-hover",true);
-            //Update the tooltip position and value
-               d3.select("#tooltip")
-                 .style("left", (d3.event.pageX+10) + "px")
-                 .style("top", (d3.event.pageY-10) + "px")
-                 .select("#value")
-                 .text("x:" + d[0] + "\ny:"+d[1] + "\nvalue:" + d[2]);  
-               //Show the tooltip
-               d3.select("#tooltip").classed("hidden", false);
+            tooltip.html(xTitle + ":" + d[0] + "<br/>"  + yTitle + ":"+ d[1] + "<br/>" + metricTitle + ":" + d[2] )
+               .style("left", (d3.event.offsetX + (d[0] > (maxX - 2) ? (0 -2 * cellWidth)  : d[0] < 2 ? 2 * cellWidth : cellWidth )) + "px")
+               .style("top", (d3.event.offsetY + (d[1] > (maxY - 2) ? (0 - 2 * cellHeight)  : d[1] < 2 ? 2 * cellHeight : cellHeight )) + "px")
+
+               .style("opacity", 1)
+              // .style("background-color", 'black')
+              // .style("color",'white')
+              ;
           })
           .on("mouseout", function(d) {
-            d3.select(this).classed("cell-hover",false);
-            d3.select("#tooltip").classed("hidden", true);
+            tooltip.style("opacity", 0);
           })
-    
 
           .attr("width", cellWidth)
           .attr("height", cellHeight)
           .attr('fill', function(d) {
             return colorScale(reverseColor ? 1 -  colorDomain(d[2]) : colorDomain(d[2]));
           });
- 
+
           if (this._showLabel) {
             rectangles.append('text')
             .text(function (d) {
-              return formatNum(d[2]);
+              return d[2];
             })
             .style('display', function (d) {
               const textLength = this.getBBox().width;
@@ -451,43 +464,44 @@ class TagCloud extends EventEmitter {
           });
           **/
 
- 
+
         tableNo++;
       }
-      
+
       // add the color legend
-      
-      const legendWidth = 20;      
+
+      const legendWidth = 20;
       const dis = (this._maxZ - this._minZ) / this._colorBucket;
       let colorNo = 0;
+      const minZ = parseFloat(this._minZ);
       const legendHeight = chartHeight / (2 * (this._colorBucket + 1));
       while (colorNo != this._colorBucket + 1) {
-        this._colors[colorNo] = num2e(this._minZ + dis * colorNo);
+        this._colors[colorNo] = num2e(dis * colorNo + minZ);
         colorNo++;
       }
-      
+
       var legendLabels = this._svgGroup.selectAll("legendLabel")
           .data(this._colors)
           .enter().append("text")
             .text(function (d) { return d; })
             .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 10)
             .attr("y", function (d, i) { return (i + 1.5) * legendHeight; })
-            .style("text-anchor", "end"); 
-      
+            .style("text-anchor", "end");
+
       var legendRect = this._svgGroup.selectAll("legendRect")
         .data(this._colors)
         .enter()
-        .append("rect"); 
+        .append("rect");
 
       legendRect
         .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 10)
         .attr("y", function (d, i) { return (i +1) * legendHeight; })
         .attr("width", legendWidth)
         .attr("height", legendHeight)
-        .style("fill", function(d){ 
-          return colorScale(reverseColor ? 1- colorDomain(d) : colorDomain(d)); 
+        .style("fill", function(d){
+          return colorScale(reverseColor ? 1- colorDomain(d) : colorDomain(d));
         });
-       
+
 
     });
   }
@@ -645,24 +659,24 @@ function hashWithinRange(str, max) {
   return Math.abs(hash) % max;
 }
 
- 
+
 function num2e(num){
     if (num ===0) {
       return '0';
     }
-    
+
     var p = Math.floor(Math.log(Math.abs(num))/Math.LN10);
     var n = num * Math.pow(10, -p);
     return (n.toFixed(4) + 'e' + p);
 }
 
 function formatNum(num) {
-  return Math.round(num) === num ? num : num.toFixed(1); 
+  return Math.round(num) === num ? num : num.toFixed(1);
 }
 
 function getColorValue(reverse) {
   if (!reverse) {
-    return 
+    return
   }
 }
 

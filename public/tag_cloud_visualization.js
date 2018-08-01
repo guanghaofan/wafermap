@@ -3,9 +3,12 @@ import { Observable } from 'rxjs';
 import { render, unmountComponentAtNode } from 'react-dom';
 import React from 'react';
 
+//import {fieldFormat} from '/ui/field_formats/field_format';
 
-import { Label } from './label';
+//import { Label } from './label';
 import { FeedbackMessage } from './feedback_message';
+
+
 
 //const MAX_TAG_COUNT = 200;
 
@@ -17,6 +20,9 @@ export class TagCloudVisualization {
     const cloudContainer = document.createElement('div');
     cloudContainer.classList.add('tagcloud-vis');
     this._containerNode.appendChild(cloudContainer);
+
+    // filed format
+    this._fieldFormat = null;
 
     this._vis = vis;
     this._incomplete = false;
@@ -43,13 +49,15 @@ export class TagCloudVisualization {
     this._containerNode.appendChild(this._feedbackNode);
     this._feedbackMessage = render(<FeedbackMessage />, this._feedbackNode);
 
+    /**
     this._labelNode = document.createElement('div');
     this._containerNode.appendChild(this._labelNode);
     this._label = render(<Label />, this._labelNode);
+    **/
 
     /**
     this._tooltip = document.createElement('div');
-    this._containerNode.appendChild(this._tooltip); 
+    this._containerNode.appendChild(this._tooltip);
     **/
 
     this._series = false;
@@ -66,11 +74,11 @@ export class TagCloudVisualization {
     this._isErrorBucket = false;
     this._isSmallSize = false;
     this._isEmptyData = false;
-  
+
     if(!(data && data.tables.length)) {
       // no data;
       this._isEmptyData = true;
-    } 
+    }
     this._tableCnt = data.tables.length;
     if ((!this._isEmptyData) && this._validateBucket()) {
       if (status.params || status.aggs) {
@@ -100,22 +108,25 @@ export class TagCloudVisualization {
      this._tagCloud._emptyDOM();
      return;
     }
+
+    /**
     this._label.setState({
       label: `${this._vis.aggs[0].makeLabel()} - ${this._vis.aggs[1].makeLabel()}`,
       shouldShowLabel: this._vis.params.showLabel
     });
-  
+    **/
+
     await this._renderComplete$.take(1).toPromise();
-   
+
   }
 
 
   destroy() {
     this._tagCloud.destroy();
     unmountComponentAtNode(this._feedbackNode);
-    unmountComponentAtNode(this._labelNode);
+    //unmountComponentAtNode(this._labelNode);
   }
-  
+
   _validateCellSize() {
     if (this._series) {
       if ((this._row
@@ -137,7 +148,7 @@ export class TagCloudVisualization {
     }
     return true;
   }
-  
+
   _validateBucket() {
     // check the buckets and metrics count
     // TO DO, must be terms-terms or split-terms-terms
@@ -149,7 +160,7 @@ export class TagCloudVisualization {
     for(let aggNo =0; aggNo != aggCnt; aggNo ++) {
       if (!this._vis.aggs.raw[aggNo].enabled) {
         continue;
-      } 
+      }
       switch (this._vis.aggs.raw[aggNo].type.type) {
         case "metrics":
           metricCnt++;
@@ -157,12 +168,12 @@ export class TagCloudVisualization {
         case "buckets":
           if (this._vis.aggs.raw[aggNo].type.name === "terms") {
             bucketCnt++;
-          }     
+          }
           if (this._vis.aggs.raw[aggNo].schema.name === "split") {
             this._series = true;
             this._row = this._vis.aggs.raw[aggNo].params.row;
             seriesBucketNo = aggNo;
-          } 
+          }
           break;
       }
     }
@@ -189,23 +200,26 @@ export class TagCloudVisualization {
     let tableNo = 0;
     const columnCnt = 3;
     // only one series case
- 
+
     while (tableNo !== this._tableCnt) {
       let chartData;
       if (this._tableCnt > 1 || this._series) {
         var temp  = response.tables[tableNo].tables["0"];
         chartData = temp.rows;
+        this._fieldFormat = temp.columns[2].aggConfig.params.field.format;
       }
       else {
         chartData = response.tables[tableNo].rows;
+        this._fieldFormat = response.tables[tableNo].columns[2].aggConfig.params.field.format;
       }
-      
+
       let rowNo = 0;
       let columnNo =0;
       const rowCnt = chartData.length;
       while (rowNo != rowCnt) {
         maxX = (maxX < chartData[rowNo][0] ? chartData[rowNo][0] : maxX);
         maxY = (maxY < chartData[rowNo][1] ? chartData[rowNo][1] : maxY);
+        chartData[rowNo][2] = this._fieldFormat.getConverterFor('text')(chartData[rowNo][2], null, null, null);
         if(rowNo === 0) {
           minZ = chartData[rowNo][2];
           maxZ = minZ;
@@ -218,8 +232,8 @@ export class TagCloudVisualization {
       }
       tableNo++;
     }
-    this._maxX = maxX + 1; 
-    this._maxY = maxY + 1;  
+    this._maxX = maxX + 1;
+    this._maxY = maxY + 1;
     rowNo = 0;
     let y = new Array(this._maxY);
     let x = new Array(this._maxX);
