@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { render, unmountComponentAtNode } from 'react-dom';
 import React from 'react';
 
-//import {fieldFormat} from '/ui/field_formats/field_format';
+var _field_formats = require('ui/registry/field_formats');
 
 //import { Label } from './label';
 import { FeedbackMessage } from './feedback_message';
@@ -81,10 +81,7 @@ export class TagCloudVisualization {
     }
     this._tableCnt = data.tables.length;
     if ((!this._isEmptyData) && this._validateBucket()) {
-      if (status.params || status.aggs) {
-        this._updateParams();
-      }
-
+      this._updateParams();
       if (status.data || status.resize || status.params) {
         // we must update the data
         if (status.data) {
@@ -206,7 +203,20 @@ export class TagCloudVisualization {
       if (this._tableCnt > 1 || this._series) {
         var temp  = response.tables[tableNo].tables["0"];
         chartData = temp.rows;
-        this._fieldFormat = temp.columns[2].aggConfig.params.field.format;
+        var metricAgg = this._vis.aggs.find(aggConfig=> aggConfig.id === temp.columns[2].aggConfig.id);
+        this._fieldFormat = metricAgg.type && metricAgg.type.getFormat(metricAgg);
+        if (!this._fieldFormat) {
+           this._fieldFormat =  _field_formats.fieldFormats.getDefaultInstance('number');
+        }
+        // this is to fix the fake status.data changed once there's split chart bucket
+        if (this._series) {
+          if (typeof chartData[0][2] === 'string') {
+            return;
+          }
+        }
+
+        //this._fieldFormat = aggMetric.params.field.format;
+       // this._fieldFormat = this._vis.aggs[0].params.field.format;
       }
       else {
         chartData = response.tables[tableNo].rows;
@@ -219,19 +229,22 @@ export class TagCloudVisualization {
       while (rowNo != rowCnt) {
         maxX = (maxX < chartData[rowNo][0] ? chartData[rowNo][0] : maxX);
         maxY = (maxY < chartData[rowNo][1] ? chartData[rowNo][1] : maxY);
-        chartData[rowNo][2] = this._fieldFormat.getConverterFor('text')(chartData[rowNo][2], null, null, null);
-        if(rowNo === 0) {
+        if (tableNo ===0 && rowNo === 0) {
           minZ = chartData[rowNo][2];
           maxZ = minZ;
+          chartData[rowNo][2] = this._fieldFormat.getConverterFor('text')(chartData[rowNo][2], null, null, null);
         }
         else {
           maxZ = (maxZ < chartData[rowNo][2] ? chartData[rowNo][2] : maxZ);
           minZ = (minZ > chartData[rowNo][2] ? chartData[rowNo][2] : minZ);
+          chartData[rowNo][2] = this._fieldFormat.getConverterFor('text')(chartData[rowNo][2], null, null, null);
         }
         rowNo++;
       }
       tableNo++;
     }
+    minZ = parseFloat (this._fieldFormat.getConverterFor('text')(minZ, null, null, null));
+    maxZ = parseFloat (this._fieldFormat.getConverterFor('text')(maxZ, null, null, null));
     this._maxX = maxX + 1;
     this._maxY = maxY + 1;
     rowNo = 0;

@@ -89,7 +89,7 @@ class TagCloud extends EventEmitter {
     }
     this._optionsAsString = JSON.stringify(options);
     this._showLabel = options.showLabel;
-    this._addTooptip = options.addTooltip;
+    this._addTooltip = options.addTooltip;
     this._colorSchema = options.colorSchema;
     this._reverseColor = options.reverseColor;
   }
@@ -282,14 +282,18 @@ class TagCloud extends EventEmitter {
       var tooltip = this._tooltip;
 
       let tableNo = 0;
-      const metricTitle = this._series ? this._words[tableNo].tables["0"].columns[2].title : this._words[tableNo].columns[2].title;
-      const xTitle = this._series ? this._words[tableNo].tables["0"].columns[0].title : this._words[tableNo].columns[0].title;
-      const yTitle = this._series ? this._words[tableNo].tables["0"].columns[1].title : this._words[tableNo].columns[1].title;
+      let metricTitle = this._series ? this._words[tableNo].tables["0"].columns[2].title : this._words[tableNo].columns[2].title;
+      let xTitle = this._series ? this._words[tableNo].tables["0"].columns[0].title : this._words[tableNo].columns[0].title;
+      let yTitle = this._series ? this._words[tableNo].tables["0"].columns[1].title : this._words[tableNo].columns[1].title;
+      let xTitleLength = xTitle.length;
+      let yTitleLength = yTitle.length;
+      let metricTitleLength = metricTitle.length;
 
       const maxX = this._x.length - 1;
       const maxY = this._y.length - 1;
       const reverseColor = this._reverseColor;
       const isRow = this._row;
+      const isSeries = this._series;
       const yBase = this._element.offsetHeight - this._marginBottom - this._marginTop;
       while (tableNo !== tableCnt) {
         /**
@@ -403,28 +407,13 @@ class TagCloud extends EventEmitter {
           .data(this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows)
           .enter();
 
-        rectangles
-          .append("rect")
-          .attr("x", function (d) {
+        var map = rectangles.append("rect");
+
+         map.attr("x", function (d) {
              return (isRow || tableCnt === 1 ? d[0] * cellWidth + (spaceCellCnt * cellWidth) / 2 + tableNo * xWidth : d[0] * cellWidth + (spaceCellCnt * cellWidth / 2));
           })
           .attr("y", function(d) {
             return (isRow || tableCnt === 1 ? d[1] * cellHeight + (cellHeight * spaceCellCnt) / 2 : d[1] * cellHeight + (cellHeight * spaceCellCnt) / 2 + tableNo * yHeight);
-          })
-
-          // add for tooltip
-          .on("mouseover", function(d) {
-            tooltip.html(xTitle + ":" + d[0] + "<br/>"  + yTitle + ":"+ d[1] + "<br/>" + metricTitle + ":" + d[2] )
-               .style("left", (d3.event.offsetX + (d[0] > (maxX - 2) ? (0 -2 * cellWidth)  : d[0] < 2 ? 2 * cellWidth : cellWidth )) + "px")
-               .style("top", (d3.event.offsetY + (d[1] > (maxY - 2) ? (0 - 2 * cellHeight)  : d[1] < 2 ? 2 * cellHeight : cellHeight )) + "px")
-
-               .style("opacity", 1)
-              // .style("background-color", 'black')
-              // .style("color",'white')
-              ;
-          })
-          .on("mouseout", function(d) {
-            tooltip.style("opacity", 0);
           })
 
           .attr("width", cellWidth)
@@ -456,6 +445,62 @@ class TagCloud extends EventEmitter {
             });
           }
 
+          map.on("mouseover", function(d) {
+             d3.select(this).classed("cell-hover",true);
+           })
+           .on("mouseout", function(d) {
+             d3.select(this).classed("cell-hover",false);
+         });
+
+
+          let seriesTitle = "";
+          // add for tooltip
+          if (isSeries) {
+            seriesTitle = this._words[tableNo].title.split(":")[1]
+              + ":"
+              + this._words[tableNo].title.split(":")[2];
+          }
+
+          let seriesTitleLength = seriesTitle.length;
+          let maxTitleLength = seriesTitleLength > xTitleLength ?
+            (seriesTitleLength > yTitleLength ? seriesTitleLength : yTitleLength)
+            : (xTitleLength > yTitleLength ? xTitleLength : yTitleLength);
+          maxTitleLength = maxTitleLength > metricTitleLength ? maxTitleLength : metricTitleLength;
+          while (metricTitleLength ++ < (maxTitleLength)) {
+            metricTitle += '&nbsp;';
+          }
+          while (xTitleLength ++ < maxTitleLength) {
+            xTitle += '&nbsp;';
+          }
+          while (yTitleLength ++ < maxTitleLength) {
+            yTitle += '&nbsp;';
+          }
+          while (seriesTitleLength ++ < maxTitleLength) {
+            seriesTitle += '&nbsp;';
+          }
+          seriesTitle = isSeries ? ("<br/>"  + seriesTitle + '&nbsp;' + this._words[tableNo].title.split(":")[0]) : '';
+
+          if (this._addTooltip) {
+            map.on("mouseover", function(d) {
+              tooltip.html(metricTitle + '&nbsp;' + d[2]
+                  + "<br/>"  + xTitle + '&nbsp;' + d[0]
+                  + "<br/>"  + yTitle + '&nbsp;' + d[1]
+                  + seriesTitle
+                 )
+                 .style("left", (d3.event.offsetX + (d[0] > (maxX - 2) ? (0 -2 * cellWidth)  : d[0] < 2 ? 2 * cellWidth : cellWidth )) + "px")
+                 .style("top", (d3.event.offsetY + (d[1] > (maxY - 2) ? (0 - 2 * cellHeight)  : d[1] < 2 ? 2 * cellHeight : cellHeight )) + "px")
+
+                 .style("opacity", 1)
+                // .style("background-color", 'black')
+                // .style("color",'white')
+                ;
+            })
+            .on("mouseout", function(d) {
+              tooltip.style("opacity", 0);
+            });
+          }
+
+
           /**
           .attr('transform', function (d) {
             const horizontalCenter = x(d) + squareWidth / 2;
@@ -473,10 +518,9 @@ class TagCloud extends EventEmitter {
       const legendWidth = 20;
       const dis = (this._maxZ - this._minZ) / this._colorBucket;
       let colorNo = 0;
-      const minZ = parseFloat(this._minZ);
       const legendHeight = chartHeight / (2 * (this._colorBucket + 1));
       while (colorNo != this._colorBucket + 1) {
-        this._colors[colorNo] = num2e(dis * colorNo + minZ);
+        this._colors[colorNo] = num2e(dis * colorNo + this._minZ);
         colorNo++;
       }
 
@@ -486,7 +530,14 @@ class TagCloud extends EventEmitter {
             .text(function (d) { return d; })
             .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 10)
             .attr("y", function (d, i) { return (i + 1.5) * legendHeight; })
+            .attr("dy", "0.5em")
             .style("text-anchor", "end");
+      var legendTitle = this._svgGroup.append("text")
+          .text(this._series ? this._words[0].tables["0"].columns[2].title : this._words[0].columns[2].title)
+          .attr("x", this._element.offsetWidth - this._marginLeft - 10)
+          .attr("y", legendHeight - 15)
+          .style("text-anchor", "end");
+
 
       var legendRect = this._svgGroup.selectAll("legendRect")
         .data(this._colors)
@@ -667,7 +718,7 @@ function num2e(num){
 
     var p = Math.floor(Math.log(Math.abs(num))/Math.LN10);
     var n = num * Math.pow(10, -p);
-    return (n.toFixed(4) + 'e' + p);
+    return (n.toFixed(3) + 'e' + p);
 }
 
 function formatNum(num) {
