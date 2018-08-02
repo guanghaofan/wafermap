@@ -283,8 +283,8 @@ class TagCloud extends EventEmitter {
 
       let tableNo = 0;
       let metricTitle = this._series ? this._words[tableNo].tables["0"].columns[2].title : this._words[tableNo].columns[2].title;
-      let xTitle = this._series ? this._words[tableNo].tables["0"].columns[0].title : this._words[tableNo].columns[0].title;
-      let yTitle = this._series ? this._words[tableNo].tables["0"].columns[1].title : this._words[tableNo].columns[1].title;
+      const xTitle = this._series ? this._words[tableNo].tables["0"].columns[0].title : this._words[tableNo].columns[0].title;
+      const yTitle = this._series ? this._words[tableNo].tables["0"].columns[1].title : this._words[tableNo].columns[1].title;
       let xTitleLength = xTitle.length;
       let yTitleLength = yTitle.length;
       let metricTitleLength = metricTitle.length;
@@ -384,6 +384,33 @@ class TagCloud extends EventEmitter {
                 return (isRow || tableCnt === 1 ? yBase : ((tableNo === tableCnt - 1) ? yBase :
                   tableNo * yHeight + chartHeight));
              });
+         // xAxis title
+         var xAxisTitle = this._svgGroup.append("text")
+             .text(xTitle)
+             .attr("x",
+               ((!isRow) || tableCnt === 1 ? xWidth / 2 : tableNo * xWidth + chartWidth / 2)
+             )
+             .attr("y",
+               (isRow || tableCnt === 1 ? yBase + 15 : ((tableNo === tableCnt - 1) ? yBase + 15 :
+                 tableNo * yHeight + chartHeight + 15))
+             )
+             .attr("dy", ".5em")
+             .style("text-anchor", "middle");
+          // sereis title if necessary
+          if (this._series && isRow) {
+            var xSeriesTitle = this._svgGroup.append("text")
+             .text(this._words[tableNo].title)
+             .attr("x",
+               ((!isRow) || tableCnt === 1 ? xWidth / 2 : tableNo * xWidth + chartWidth / 2)
+             )
+             .attr("y",
+               (isRow || tableCnt === 1 ? yBase + 30 : ((tableNo === tableCnt - 1) ? yBase + 30 :
+                 tableNo * yHeight + chartHeight + 30))
+             )
+             .attr("dy", ".5em")
+             .style("text-anchor", "middle");
+          }
+
        }
 
         if (tableNo === 0 || (!this._row) || this._showRowY) {
@@ -460,6 +487,8 @@ class TagCloud extends EventEmitter {
               + ":"
               + this._words[tableNo].title.split(":")[2];
           }
+          let _xTitle = xTitle;
+          let _yTitle = yTitle;
 
           let seriesTitleLength = seriesTitle.length;
           let maxTitleLength = seriesTitleLength > xTitleLength ?
@@ -470,10 +499,10 @@ class TagCloud extends EventEmitter {
             metricTitle += '&nbsp;';
           }
           while (xTitleLength ++ < maxTitleLength) {
-            xTitle += '&nbsp;';
+            _xTitle += '&nbsp;';
           }
           while (yTitleLength ++ < maxTitleLength) {
-            yTitle += '&nbsp;';
+            _yTitle += '&nbsp;';
           }
           while (seriesTitleLength ++ < maxTitleLength) {
             seriesTitle += '&nbsp;';
@@ -483,8 +512,8 @@ class TagCloud extends EventEmitter {
           if (this._addTooltip) {
             map.on("mouseover", function(d) {
               tooltip.html(metricTitle + '&nbsp;' + d[2]
-                  + "<br/>"  + xTitle + '&nbsp;' + d[0]
-                  + "<br/>"  + yTitle + '&nbsp;' + d[1]
+                  + "<br/>"  + _xTitle + '&nbsp;' + d[0]
+                  + "<br/>"  + _yTitle + '&nbsp;' + d[1]
                   + seriesTitle
                  )
                  .style("left", (d3.event.offsetX + (d[0] > (maxX - 2) ? (0 -2 * cellWidth)  : d[0] < 2 ? 2 * cellWidth : cellWidth )) + "px")
