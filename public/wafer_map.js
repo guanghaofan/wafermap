@@ -1,5 +1,4 @@
 import d3 from 'd3';
-import d3TagCloud from 'd3-cloud';
 import { seedColors } from 'ui/vis/components/color/seed_colors';
 import { EventEmitter } from 'events';
 
@@ -608,6 +607,7 @@ class WaferMap extends EventEmitter {
     });
   }
 
+  /**
   _makeTextSizeMapper() {
     const mapSizeToFontSize = D3_SCALING_FUNCTIONS[this._textScale]();
     const range = this._words.length === 1 ? [this._maxFontSize, this._maxFontSize] : [this._minFontSize, this._maxFontSize];
@@ -617,10 +617,11 @@ class WaferMap extends EventEmitter {
     }
     return mapSizeToFontSize;
   }
+  **/
 
   _makeNewJob() {
     return {
-      refreshLayout: true,
+      refreshLayout: false,
       size: this._size.slice(),
       words: this._words
     };
@@ -656,7 +657,7 @@ class WaferMap extends EventEmitter {
     this._processPendingJob();
   }
 
-
+  /**
   async _updateLayout(job) {
 
     if (job.size[0] <= 0 || job.size[1] <= 0) {
@@ -689,6 +690,7 @@ class WaferMap extends EventEmitter {
       tagCloudLayoutGenerator.start();
     });
   }
+  **/
 
 
   /**
