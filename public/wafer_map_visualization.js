@@ -65,8 +65,8 @@ export class WaferMapVisualization {
     this._series = false;
     this._row = false;
     this._tableCnt = 0;
-    this._mapHeight = 20;
-    this._mapWidth = 20;
+    this._mapHeight = 10;
+    this._mapWidth = 10;
     this._maxX = 1;
     this._maxY = 1;
   }

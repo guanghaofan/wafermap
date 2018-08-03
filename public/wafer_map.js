@@ -377,6 +377,7 @@ class WaferMap extends EventEmitter {
               .style("text-anchor", "middle")
               .attr("dy", ".5em")
               .attr("class", "series-title")
+              .attr("opacity", d=> {return cellWidth >= 15 ? 1 : cellWidth >= 10 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;})
               .attr("x", function (d, i) {
                 return (isRow || tableCnt === 1 ? tableNo * xWidth + (i + 0.5) * cellWidth + (spaceCellCnt * cellWidth) / 2 : (i + 0.5) * cellWidth + (cellWidth * spaceCellCnt) / 2);
               })
@@ -421,6 +422,7 @@ class WaferMap extends EventEmitter {
               .text(function (d) { return d; })
               .style("text-anchor", "end")
               .attr("class", "series-title")
+              .attr("opacity", d=> {return cellHeight >= 15 ? 1 : cellHeight >= 10 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;})
               .attr("dy", ".5em")
               .attr("x",  function (d, i) {
                 return (isRow || tableCnt === 1 ? xWidth * tableNo : 0);
