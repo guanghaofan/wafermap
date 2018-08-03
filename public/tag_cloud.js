@@ -377,6 +377,7 @@ class TagCloud extends EventEmitter {
               .text(function (d) { return d; })
               .style("text-anchor", "middle")
               .attr("dy", ".5em")
+              .attr("class", "series-title")
               .attr("x", function (d, i) {
                 return (isRow || tableCnt === 1 ? tableNo * xWidth + (i + 0.5) * cellWidth + (spaceCellCnt * cellWidth) / 2 : (i + 0.5) * cellWidth + (cellWidth * spaceCellCnt) / 2);
               })
@@ -391,8 +392,8 @@ class TagCloud extends EventEmitter {
                ((!isRow) || tableCnt === 1 ? xWidth / 2 : tableNo * xWidth + chartWidth / 2)
              )
              .attr("y",
-               (isRow || tableCnt === 1 ? yBase + 15 : ((tableNo === tableCnt - 1) ? yBase + 15 :
-                 tableNo * yHeight + chartHeight + 15))
+               (isRow || tableCnt === 1 ? yBase + (this._series && isRow ? 20 : 30) : ((tableNo === tableCnt - 1) ? yBase + (this._series && isRow ? 20 : 30) :
+                 tableNo * yHeight + chartHeight + (this._series && isRow ? 20 : 30)))
              )
              .attr("dy", ".5em")
              .style("text-anchor", "middle");
@@ -404,21 +405,23 @@ class TagCloud extends EventEmitter {
                ((!isRow) || tableCnt === 1 ? xWidth / 2 : tableNo * xWidth + chartWidth / 2)
              )
              .attr("y",
-               (isRow || tableCnt === 1 ? yBase + 30 : ((tableNo === tableCnt - 1) ? yBase + 30 :
-                 tableNo * yHeight + chartHeight + 30))
+               (isRow || tableCnt === 1 ? yBase + 35 : ((tableNo === tableCnt - 1) ? yBase + 35 :
+                 tableNo * yHeight + chartHeight + 35))
              )
              .attr("dy", ".5em")
+             .attr("class", "series-title")
              .style("text-anchor", "middle");
           }
 
        }
 
-        if (tableNo === 0 || (!this._row) || this._showRowY) {
+      if (tableNo === 0 || (!this._row) || this._showRowY) {
           var yLabels = this._svgGroup.selectAll(".yLabel-" + tableNo)
             .data(this._y)
             .enter().append("text")
               .text(function (d) { return d; })
               .style("text-anchor", "end")
+              .attr("class", "series-title") 
               .attr("dy", ".5em")
               .attr("x",  function (d, i) {
                 return (isRow || tableCnt === 1 ? xWidth * tableNo : 0);
@@ -426,10 +429,29 @@ class TagCloud extends EventEmitter {
               .attr("y", function (d, i) {
                 return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 : (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 + yHeight * tableNo);
               });
-          // TODO add y-coord title
+          
+         // xAxis title
+         var yAxisTitle = this._svgGroup.append("text")
+             .text(yTitle)
+             .attr("transform", "rotate(-90)")
+             .attr("x",isRow || tableCnt === 1 ? 0 - chartHeight/2 : 0 - chartHeight/2 - tableNo * yHeight)
+             .attr("y", isRow || tableCnt === 1 ? xWidth * tableNo - (this._series && (!isRow)? 25 : 35) : -(this._series && (!isRow)? 25 : 35))
+             //.attr("dy", ".5em")
+             .style("text-anchor", "middle");
 
-
-        }
+          // sereis title if necessary
+          if (this._series && (!isRow)) {
+            var ySeriesTitle = this._svgGroup.append("text")
+             .text(this._words[tableNo].title)
+             .attr("transform", "rotate(-90)")
+             .attr("x",isRow || tableCnt === 1 ? 0 - chartHeight/2 : 0 - chartHeight/2 - tableNo * yHeight)
+             .attr("y", isRow || tableCnt === 1 ? xWidth * tableNo - 40 : -40)
+             .attr("class", "series-title")
+             //.attr("dy", ".5em")
+             .style("text-anchor", "middle");
+          }
+          
+      }
         var rectangles = this._svgGroup.selectAll("rect-" + tableNo)
           .data(this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows)
           .enter();
