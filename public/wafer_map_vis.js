@@ -1,11 +1,11 @@
-import './tag_cloud.less';
-import './tag_cloud_vis_params';
+import './wafer_map.less';
+import './wafer_map_vis_params';
 import { VisFactoryProvider } from 'ui/vis/vis_factory';
 import { CATEGORY } from 'ui/vis/vis_category';
 import { Schemas } from 'ui/vis/editors/default/schemas';
-import { TagCloudVisualization } from './tag_cloud_visualization';
+import { WaferMapVisualization } from './wafer_map_visualization';
 import { VisTypesRegistryProvider } from 'ui/registry/vis_types';
-import image from './images/icon-tagcloud.svg';
+import image from './images/icon-wafermap.svg';
 import { Status } from 'ui/vis/update_status';
 
 VisTypesRegistryProvider.register(function (Private) {
@@ -28,7 +28,7 @@ VisTypesRegistryProvider.register(function (Private) {
       }
     },
     requiresUpdateStatus: [Status.PARAMS, Status.RESIZE, Status.DATA],
-    visualization: TagCloudVisualization,
+    visualization: WaferMapVisualization,
     responseHandler: 'tabify',
     editorConfig: {
       collections: {

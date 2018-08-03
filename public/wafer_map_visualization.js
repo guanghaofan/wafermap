@@ -12,7 +12,7 @@ import { FeedbackMessage } from './feedback_message';
 
 //const MAX_TAG_COUNT = 200;
 
-export class TagCloudVisualization {
+export class WaferMapVisualization {
 
   constructor(node, vis) {
     this._containerNode = node;
@@ -33,6 +33,7 @@ export class TagCloudVisualization {
     this._marginRight = 110;
     this._marginNeighbor = 30;
     this._tagCloud = new TagCloud(cloudContainer, this._marginLeft, this._marginRight, this._marginTop, this._marginBottom, this._marginNeighbor);
+    /**
     this._tagCloud.on('select', (event) => {
       if (!this._bucketAgg) {
         return;
@@ -40,6 +41,7 @@ export class TagCloudVisualization {
       const filter = this._bucketAgg.createFilter(event);
       this._vis.API.queryFilter.addFilters(filter);
     });
+    **/
     this._renderComplete$ = Observable.fromEvent(this._tagCloud, 'renderComplete');
 
     this._isSmallSize = false;
