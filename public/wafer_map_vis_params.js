@@ -1,5 +1,5 @@
 import { uiModules } from 'ui/modules';
-import waferMapVisParamsTemplate from './tag_cloud_vis_params.html';
+import waferMapVisParamsTemplate from './wafer_map_vis_params.html';
 import noUiSlider from 'no-ui-slider';
 import 'no-ui-slider/css/nouislider.css';
 import 'no-ui-slider/css/nouislider.pips.css';
@@ -11,10 +11,10 @@ uiModules.get('kibana/table_vis')
       restrict: 'E',
       template:waferMapVisParamsTemplate,
       link: function ($scope, $element) {
-         
+
         //const sliderContainer = $element[0];
         //const slider = sliderContainer.querySelector('.tag-cloud-fontsize-slider');
-         
+
         $scope.config = $scope.vis.type.editorConfig;
         /**
         noUiSlider.create(slider, {
@@ -32,11 +32,11 @@ uiModules.get('kibana/table_vis')
           });
         });
         **/
-       
+
         /**
          * Whenever the params change (e.g. by hitting reset in the editor)
          * set the uislider value to the new value.
-       **/  
+       **/
         /**
         $scope.$watch('vis.params.minFontSize', (val) => {
           val = parseInt(val);
@@ -51,7 +51,7 @@ uiModules.get('kibana/table_vis')
           }
         });
         **/
-      
+
       }
     };
   });

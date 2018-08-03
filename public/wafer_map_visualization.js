@@ -18,7 +18,7 @@ export class WaferMapVisualization {
     this._containerNode = node;
 
     const cloudContainer = document.createElement('div');
-    cloudContainer.classList.add('tagcloud-vis');
+    cloudContainer.classList.add('wafermap-vis');
     this._containerNode.appendChild(cloudContainer);
 
     // filed format
@@ -32,9 +32,9 @@ export class WaferMapVisualization {
     this._marginLeft = 50;
     this._marginRight = 110;
     this._marginNeighbor = 30;
-    this._tagCloud = new WaferMap(cloudContainer, this._marginLeft, this._marginRight, this._marginTop, this._marginBottom, this._marginNeighbor);
+    this._waferMap = new WaferMap(cloudContainer, this._marginLeft, this._marginRight, this._marginTop, this._marginBottom, this._marginNeighbor);
     /**
-    this._tagCloud.on('select', (event) => {
+    this._waferMap.on('select', (event) => {
       if (!this._bucketAgg) {
         return;
       }
@@ -42,7 +42,7 @@ export class WaferMapVisualization {
       this._vis.API.queryFilter.addFilters(filter);
     });
     **/
-    this._renderComplete$ = Observable.fromEvent(this._tagCloud, 'renderComplete');
+    this._renderComplete$ = Observable.fromEvent(this._waferMap, 'renderComplete');
 
     this._isSmallSize = false;
     this._isErrorBucket = false;
@@ -90,7 +90,7 @@ export class WaferMapVisualization {
           this._generateData(data);
         }
         if(this._validateCellSize()) {
-          this._tagCloud.upateSVG();
+          this._waferMap.upateSVG();
         }
       }
     }
@@ -104,7 +104,7 @@ export class WaferMapVisualization {
 
 
     if (this._isEmptyData || this._isErrorBucket || this._isSmallSize) {
-     this._tagCloud._emptyDOM();
+     this._waferMap._emptyDOM();
      return;
     }
 
@@ -121,7 +121,7 @@ export class WaferMapVisualization {
 
 
   destroy() {
-    this._tagCloud.destroy();
+    this._waferMap.destroy();
     unmountComponentAtNode(this._feedbackNode);
     //unmountComponentAtNode(this._labelNode);
   }
@@ -186,7 +186,7 @@ export class WaferMapVisualization {
   }
 
   _updateParams() {
-    this._tagCloud.setOptions(this._vis.params);
+    this._waferMap.setOptions(this._vis.params);
   }
 
   _generateData(response) {
@@ -261,6 +261,6 @@ export class WaferMapVisualization {
       x[columnNo] = columnNo;
       columnNo++;
     }
-    this._tagCloud.setData(minZ, maxZ, x, y, response.tables, this._row, this._series);
+    this._waferMap.setData(minZ, maxZ, x, y, response.tables, this._row, this._series);
   }
 }
