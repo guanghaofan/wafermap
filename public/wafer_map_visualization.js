@@ -1,4 +1,4 @@
-import TagCloud from './tag_cloud';
+import WaferMap from './wafer_map';
 import { Observable } from 'rxjs';
 import { render, unmountComponentAtNode } from 'react-dom';
 import React from 'react';
@@ -32,7 +32,7 @@ export class WaferMapVisualization {
     this._marginLeft = 50;
     this._marginRight = 110;
     this._marginNeighbor = 30;
-    this._tagCloud = new TagCloud(cloudContainer, this._marginLeft, this._marginRight, this._marginTop, this._marginBottom, this._marginNeighbor);
+    this._tagCloud = new WaferMap(cloudContainer, this._marginLeft, this._marginRight, this._marginTop, this._marginBottom, this._marginNeighbor);
     /**
     this._tagCloud.on('select', (event) => {
       if (!this._bucketAgg) {

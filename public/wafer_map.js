@@ -18,7 +18,7 @@ const D3_SCALING_FUNCTIONS = {
   'square root': () => d3.scale.sqrt()
 };
 
-class TagCloud extends EventEmitter {
+class WaferMap extends EventEmitter {
 
   constructor(domNode, marginLeft, marginRight, marginTop, marginBottom, marginNeighbor) {
 
@@ -121,7 +121,7 @@ class TagCloud extends EventEmitter {
   }
 
   getStatus() {
-    return this._allInViewBox ? TagCloud.STATUS.COMPLETE : TagCloud.STATUS.INCOMPLETE;
+    return this._allInViewBox ? WaferMap.STATUS.COMPLETE : WaferMap.STATUS.INCOMPLETE;
   }
 
   _updateContainerSize() {
@@ -421,7 +421,7 @@ class TagCloud extends EventEmitter {
             .enter().append("text")
               .text(function (d) { return d; })
               .style("text-anchor", "end")
-              .attr("class", "series-title") 
+              .attr("class", "series-title")
               .attr("dy", ".5em")
               .attr("x",  function (d, i) {
                 return (isRow || tableCnt === 1 ? xWidth * tableNo : 0);
@@ -429,7 +429,7 @@ class TagCloud extends EventEmitter {
               .attr("y", function (d, i) {
                 return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 : (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 + yHeight * tableNo);
               });
-          
+
          // xAxis title
          var yAxisTitle = this._svgGroup.append("text")
              .text(yTitle)
@@ -450,7 +450,7 @@ class TagCloud extends EventEmitter {
              //.attr("dy", ".5em")
              .style("text-anchor", "middle");
           }
-          
+
       }
         var rectangles = this._svgGroup.selectAll("rect-" + tableNo)
           .data(this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows)
@@ -715,7 +715,7 @@ class TagCloud extends EventEmitter {
 
 }
 
-TagCloud.STATUS = { COMPLETE: 0, INCOMPLETE: 1 };
+WaferMap.STATUS = { COMPLETE: 0, INCOMPLETE: 1 };
 
 function seed() {
   return 0.5;//constant seed (not random) to ensure constant layouts for identical data
@@ -784,4 +784,4 @@ function getColorValue(reverse) {
 
 
 
-export default TagCloud;
+export default WaferMap;
