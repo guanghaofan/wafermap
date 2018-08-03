@@ -20,21 +20,28 @@ const D3_SCALING_FUNCTIONS = {
 
 class TagCloud extends EventEmitter {
 
-  constructor(domNode) {
+  constructor(domNode, marginLeft, marginRight, marginTop, marginBottom, marginNeighbor) {
 
     super();
-    
+
     //DOM
-    this._marginLeft = 50;
-    this._marginBottom = 50;
-    this._marginTop = 20;
-    this._marginRight = 50;
+    this._marginLeft = marginLeft;
+    this._marginBottom = marginBottom;
+    this._marginTop = marginTop;
+    this._marginRight = marginRight;
+    this._marginNeighbor = marginNeighbor;
     this._element = domNode;
     this._d3SvgContainer = d3.select(this._element).append('svg');
     this._svgGroup = this._d3SvgContainer.append('g')
         .attr("transform", "translate(" + this._marginLeft + "," + this._marginTop + ")");
     this._size = [1, 1];
-    this.resize();
+
+    this._tooltip = d3.select(this._element).append("div")
+      .attr("class", "tooltip")
+      .style("opacity", 0);
+
+
+
 
     //SETTING (non-configurable)
     this._fontFamily = 'Open Sans, sans-serif';
@@ -45,181 +52,34 @@ class TagCloud extends EventEmitter {
     this._padding = 5;
 
     //OPTIONS
-    this._orientation = 'single';
-    this._minFontSize = 10;
-    this._maxFontSize = 36;
-    this._textScale = 'linear';
-    this._optionsAsString = null;
+    this._colorSchema = 'green-red';
+    this._showLabel = false;
+    this._reverseColor = false;
+    this._addTooltip = false;
 
     //DATA
     this._words = null;
-    this._minZ = null;
-    this._maxZ = null;
+    this._minZ = 0;
+    this._maxZ = 1;
+    //this._xTitle = null;
+    //this._yTitle = null;
+    this._row = null;
+    this._series = false;
+    this._showRowY = false;
+    this._showColumnX = false;
+    this._colorBucket = 10;
+    this._colors = new Array(this._colorBucket);
+    this._colorRange = null;
     //UTIL
     this._setTimeoutId = null;
     this._pendingJob = null;
     this._layoutIsUpdating = null;
     this._allInViewBox = false;
     this._DOMisUpdating = false;
-    
-     this._demoData = [
-           {
-            "x": 0,
-            "y" : 0,
-            "z": 6
-           },
-           {
-            "x": 0,
-            "y" : 7,
-            "z": 6
-           },
-           {
-            "x": 2,
-            "y" : 7,
-            "z": 17
-           },
-           {
-            "x": 0,
-            "y" : 1,
-            "z": 6
-           },
-            {
-            "x": 1,
-            "y" : 0,
-            "z": 6
-           },
-           {
-            "x": 5,
-            "y" : 0,
-            "z": 1
-           },
-           {
-            "x": 6,
-            "y" : 0,
-            "z": 3
-           },
-           {
-            "x": 6,
-            "y" : 6,
-            "z": 2
-           },
-           {
-            "x": 0,
-            "y" : 6,
-            "z": 5
-           },
-           {
-            "x": 1,
-            "y" : 1,
-            "z": 6
-           },
-            {
-            "x": 1,
-            "y" : 2,
-            "z": 5
-           },
-           {
-            "x": 1,
-            "y" : 3,
-            "z": 4
-           },
-           {
-            "x": 1,
-            "y" : 4,
-            "z": 4
-           },
-            {
-            "x": 1,
-            "y" : 5,
-            "z": 6
-           },
-            {
-            "x": 1,
-            "y" : 6,
-            "z": 1
-           },
-            {
-            "x": 2,
-            "y" : 1,
-            "z": 6
-           },
-            {
-            "x": 2,
-            "y" : 2,
-            "z": 6
-           },
-            {
-            "x": 2,
-            "y" : 3,
-            "z": 3
-           },
-            {
-            "x": 2,
-            "y" : 4,
-            "z": 1
-           },
-            {
-            "x": 2,
-            "y" : 5,
-            "z": 13
-           },
-            {
-            "x": 2,
-            "y" : 6,
-            "z": 14
-           },
-            {
-            "x": 3,
-            "y" : 3,
-            "z": 4
-           },
-            {
-            "x": 3,
-            "y" : 4,
-            "z": 2
-           },
-          {
-            "x": 3,
-            "y" : 5,
-            "z": 1
-           }, {
-            "x": 3,
-            "y" : 6,
-            "z": 6
-           },
-            {
-            "x": 4,
-            "y" : 1,
-            "z": 10
-           },
-            {
-            "x": 4,
-            "y" : 2,
-            "z": 20
-           },
-            {
-            "x": 4,
-            "y" : 3,
-            "z": 1
-           },
-            {
-            "x": 4,
-            "y" : 4,
-            "z": 1
-           },
-            {
-            "x": 4,
-            "y" : 5,
-            "z": 4
-           },
-            {
-            "x": 4,
-            "y" : 6,
-            "z": 3
-           }
-          ];
-    this._x = [0, 1, 2, 3, 4, 5, 6];
-    this._y = [0, 1, 2, 3, 4, 5, 6];
+
+    this._x = null;
+    this._y = null;
+    this._showGrid = false;
   }
 
   setOptions(options) {
@@ -228,51 +88,32 @@ class TagCloud extends EventEmitter {
       return;
     }
     this._optionsAsString = JSON.stringify(options);
-    this._orientation = options.orientation;
-    this._minFontSize = Math.min(options.minFontSize, options.maxFontSize);
-    this._maxFontSize = Math.max(options.minFontSize, options.maxFontSize);
-    this._textScale = options.scale;
-    this._invalidate(false);
+    this._showLabel = options.showLabel;
+    this._addTooltip = options.addTooltip;
+    this._colorSchema = options.colorSchema;
+    this._reverseColor = options.reverseColor;
   }
 
-
-  resize() {
-    const newWidth = this._element.offsetWidth;
-    const newHeight = this._element.offsetHeight;
-
-    if (newWidth === this._size[0] && newHeight === this._size[1]) {
-      return;
-    }
-
-    const wasInside = this._size[0] >= this._cloudWidth && this._size[1] >= this._cloudHeight;
-    const willBeInside = this._cloudWidth <= newWidth && this._cloudHeight <= newHeight;
-    this._size[0] = newWidth;
-    this._size[1] = newHeight;
-    if (wasInside && willBeInside && this._allInViewBox) {
-      this._invalidate(true);
-    } else {
-      this._invalidate(false);
-    }
-
-  }
-
-  setData(data) {
+  setData(minZ, maxZ, x, y, data, row, series) {
+    //this._x = [];
+    //this._y = [];
+    this._minZ = minZ;
+    this._maxZ = maxZ;
+    this._x = x;
+    this._y = y;
     this._words = data;
-    this._invalidate(false);
-  }
-  setX(data){
-    this._x = data;
-  }
-  setY(data){
-    this._y = data;
-  }
-  setMinZ(data) {
-    this._minZ = data;
-  }
-  setMaxZ(data) {
-    this._maxZ = data;
+    this._row = row;
+    this._series =series;
+    //this._xTitle = xTitle;
+    //this._yTitle = yTitle;
   }
 
+  upateSVG() {
+    this._invalidate(false);
+  }
+  clearSVG() {
+    this._emptyDOM();
+  }
 
   destroy() {
     clearTimeout(this._setTimeoutId);
@@ -284,10 +125,10 @@ class TagCloud extends EventEmitter {
   }
 
   _updateContainerSize() {
-    this._d3SvgContainer.attr('width', this._size[0]);
-    this._d3SvgContainer.attr('height', this._size[1]);
-    this._svgGroup.attr('width', this._size[0]);
-    this._svgGroup.attr('height', this._size[1]);
+    this._d3SvgContainer.attr('width', this._element.offsetWidth);
+    this._d3SvgContainer.attr('height', this._element.offsetHeight);
+    this._svgGroup.attr('width', this._element.offsetWidth);
+    this._svgGroup.attr('height', this._element.offsetHeight);
   }
 
   _isJobRunning() {
@@ -308,17 +149,7 @@ class TagCloud extends EventEmitter {
     this._completedJob = null;
     const job = await this._pickPendingJob();
     if (job.words.length) {
-      if (job.refreshLayout) {
-        await this._updateLayout(job);
-      }
       await this._updateDOM(job);
-      const cloudBBox = this._svgGroup[0][0].getBBox();
-      this._cloudWidth = cloudBBox.width;
-      this._cloudHeight = cloudBBox.height;
-      this._allInViewBox = cloudBBox.x >= 0 &&
-        cloudBBox.y >= 0 &&
-        cloudBBox.x + cloudBBox.width <= this._element.offsetWidth &&
-        cloudBBox.y + cloudBBox.height <= this._element.offsetHeight;
     } else {
       this._emptyDOM(job);
     }
@@ -361,139 +192,418 @@ class TagCloud extends EventEmitter {
     }
 
     this._DOMisUpdating = true;
+
+    /**
     const affineTransform = positionWord.bind(null, this._element.offsetWidth / 2, this._element.offsetHeight / 2);
     const svgTextNodes = this._svgGroup.selectAll('text');
     const stage = svgTextNodes.data(job.words, getText);
+    **/
 
     await new Promise((resolve) => {
-      
-    if(this._words == null || this._minZ ==null || this.maxZ ==null) {
-      return;
-    }
-       
+      const tableCnt = this._words.length;
+      let xWidth = 0; // row mode for x coord
+      let yHeight = 0; // column mode for y coord
+      let cellHeight = 0;
+      let cellWidth = 0;
+      let chartWidth = 0; // = xWidth - neighbor
+      let chartHeight = 0;
+      let spaceCellCnt = 0.5;
+
+      if (tableCnt === 1) {
+        cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) / (this._y.length + spaceCellCnt);
+        cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / ((this._x.length + spaceCellCnt) * tableCnt);
+        xWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / tableCnt;
+        chartWidth = xWidth;
+        yHeight = this._element.offsetHeight - this._marginTop - this._marginBottom;
+        chartHeight = yHeight;
+      }
+      else if (this._row) {
+        cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) / (this._y.length + spaceCellCnt);
+        cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight - (tableCnt - 1) * this._marginNeighbor) / ((this._x.length + spaceCellCnt) * tableCnt);
+        xWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight - (tableCnt - 1) * this._marginNeighbor) / tableCnt + this._marginNeighbor;
+        chartWidth = xWidth - this._marginNeighbor;
+        yHeight = this._element.offsetHeight - this._marginTop - this._marginBottom;
+        chartHeight = yHeight;
+      }
+      else {
+        cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom - (tableCnt - 1) * this._marginNeighbor) /((this._y.length + spaceCellCnt) * tableCnt);
+        cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / (this._x.length + spaceCellCnt);
+        yHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom - (tableCnt - 1) * this._marginNeighbor) /tableCnt + this._marginNeighbor;
+        chartHeight = yHeight - this._marginNeighbor;
+        xWidth = this._element.offsetWidth - this._marginLeft - this._marginRight;
+        chartWidth = xWidth;
+      }
+
+
+
       this._emptyDOM();
-      var cellHeight = (this._size[1] - this._marginTop - this._marginBottom) /(this._y.length + 2);
-      var cellWidth = (this._size[0] - this._marginLeft - this._marginRight) / (this._x.length + 2)
+      /**
+      var cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) /(this._y.length + 2);
+      var cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / (this._x.length + 2)
       var colorDomain = d3.extent(this._words, function(d){
-      return d[2];
-    });
-
-   /**
-    var colorScale = d3.scaleLinear()
-      .domain(colorDomain)
-      .range(["green","blue"]);
-   */
-    function x(d, i) {
-       return (i + 1) * cellWidth + this._marginLeft;
-    }
-   
-    function rectx(d, i) {
-       return (d.x +1 ) * cellWidth - 0.5*cellWidth + this._marginLeft;
-    }
+        return d[2];
+      });
 
 
-    var colours = ["#6363FF", "#6373FF", "#63A3FF", "#63E3FF", "#63FFFB", "#63FFCB",
-               "#63FF9B", "#63FF6B", "#7BFF63", "#BBFF63", "#DBFF63", "#FBFF63", 
-               "#FFD363", "#FFB363", "#FF8363", "#FF7363", "#FF6364"];
+      var colorScale = d3.scaleLinear()
+        .domain(colorDomain)
+        .range(["green","blue"]);
 
-   var colorScale = d3.scale.linear()
-                      .domain(this._minZ, this._maxZ)
-                      .range(colours); 
+      function x(d, i) {
+        return (i + 1) * cellWidth + this._marginLeft;
+      }
 
-      var yLabels = this._svgGroup.selectAll(".dayLabel")
-          .data(this._y)
+      function rectx(d, i) {
+        return (d.x +1 ) * cellWidth - 0.5*cellWidth + this._marginLeft;
+      }
+      */
+
+      this._colorRange = (this._colorSchema === 'Green-Red' ? ["#008000", "#FF0000"] :
+                        this._colorSchema === 'Green-Blue' ? ["#008000", "#0000FF"] :
+                        this._colorSchema === 'Green-Yellow' ? ["#008000", "#FFFF00"] :
+                        this._colorSchema === 'Green-Orange' ? ["#008000", "#FFA500"] :
+                        this._colorSchema === 'Yellow-Pink' ? ["#FFFF00", "#FFC0CB"] :
+                        this._colorSchema === 'LightGreen-SkyBlue' ? ["#90EE90", "#87CEEB"] :
+                        this._colorSchema === 'DarkGreen-Brown' ? ["#006400", "#A52A2A"] :
+                        this._colorSchema === 'Green-Red-Yellow' ? ["#008000", "#FF0000", "#FFFF00"] :
+                        this._colorSchema === 'Green-Yellow-Blue' ? ["#008000", "#FFFF00", "#0000FF"] :
+                        this._colorSchema === 'Green-Yellow-Red' ? ["#008000", "#FFFF00", "#FF0000"] :
+                        this._colorSchema === 'Green-Yellow-Pink' ? ["#008000", "#FFFF00", "#FFC0CB"] :
+                        this._colorSchema === 'Green-Red-Blue' ? ["#008000", "#FF0000", "#0000FF"] :
+                        this._colorSchema === 'Green-Pink-Yellow' ? ["#008000", "#FFC0CB", "#FFFF00"] :
+                        ["#008000", "#FF0000"]
+      );
+
+      var colorScale = d3.scale.linear()
+        .domain(d3.range(0, 1, 1.0 / (this._colorRange.length)))
+        .range(this._colorRange);
+      var colorDomain = d3.scale.linear().domain([this._minZ,this._maxZ]).range([0,1]);
+
+      var tooltip = this._tooltip;
+
+      let tableNo = 0;
+      let metricTitle = this._series ? this._words[tableNo].tables["0"].columns[2].title : this._words[tableNo].columns[2].title;
+      const xTitle = this._series ? this._words[tableNo].tables["0"].columns[0].title : this._words[tableNo].columns[0].title;
+      const yTitle = this._series ? this._words[tableNo].tables["0"].columns[1].title : this._words[tableNo].columns[1].title;
+      let xTitleLength = xTitle.length;
+      let yTitleLength = yTitle.length;
+      let metricTitleLength = metricTitle.length;
+
+      const maxX = this._x.length - 1;
+      const maxY = this._y.length - 1;
+      const reverseColor = this._reverseColor;
+      const isRow = this._row;
+      const isSeries = this._series;
+      const yBase = this._element.offsetHeight - this._marginBottom - this._marginTop;
+      while (tableNo !== tableCnt) {
+        /**
+        var colorDomain = d3.scale.linear().domain(d3.extent(this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows, function(d){
+            return d[2];
+          })).range([0,1]);
+        **/
+
+
+        if (this._showGrid) {
+          var yLines = this._svgGroup.selectAll("line-" + tableNo)
+            .data(this._x)
+            .enter()
+            .append("line");
+
+          yLines
+           .attr('class', 'grid')
+           .attr("x1", function (d, i) {
+                return (isRow || tableCnt === 1 ? tableNo * xWidth + (i + 0.5) * cellWidth + (spaceCellCnt * cellWidth) / 2 : (i + 0.5) * cellWidth + (cellWidth * spaceCellCnt) / 2);
+              })
+           .attr("y1", function (d, i) {
+                return (isRow || tableCnt === 1 ? yBase : ((tableNo === tableCnt - 1) ? yBase :
+                  tableNo * yHeight + chartHeight));
+             })
+           .attr("x2", function (d, i) {
+                return (isRow || tableCnt === 1 ? tableNo * xWidth + (i + 0.5) * cellWidth + (spaceCellCnt * cellWidth) / 2 : (i + 0.5) * cellWidth + (cellWidth * spaceCellCnt) / 2);
+              })
+
+           .attr("y2", function (d, i) {
+                return (isRow || tableCnt === 1 ? yBase - chartHeight : ((tableNo === tableCnt - 1) ? yBase - chartHeight :
+                  tableNo * yHeight));
+             })
+           .attr("stroke-width", 1)
+           .attr("stroke", "black");
+
+          var xLines = this._svgGroup.selectAll("line-" + tableNo)
+            .data(this._y)
+            .enter()
+            .append("line");
+
+          xLines
+           .attr('class', 'grid')
+           .attr("x1", function (d, i) {
+                return (isRow || tableCnt === 1 ? xWidth * tableNo : 0);
+             })
+           .attr("y1", function (d, i) {
+                return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 : (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 + yHeight * tableNo);
+              })
+
+           .attr("x2", function (d, i) {
+                return (isRow || tableCnt === 1 ? xWidth * tableNo + xWidth : xWidth);
+              })
+           .attr("y2", function (d, i) {
+                return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 : (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 + yHeight * tableNo);
+              })
+
+           .attr("stroke-width", 1)
+           .attr("stroke", "black");
+        }
+        /**
+        if (this._series) {
+            // split series lable
+            this._svgGroup.select("series")
+              .data (this._words[tableNo].title)
+              .enter().append("text")
+                .text(this._words[tableNo].title)
+                .style("text-anchor", "middle")
+                .attr("x",
+                  isRow ? xWidth * tableNo + chartWidth / 2 : 0
+                )
+                .attr("y", isRow ? yHeight : yHeight * tableNo + yHeight / 2);
+        }
+        **/
+
+
+        // Always show the first y label and last x
+        if (tableNo === tableCnt - 1 || this._row || this._showColumnX) {
+          var xLabels = this._svgGroup.selectAll("xLabel-" + tableNo)
+            .data(this._x)
+            .enter().append("text")
+              .text(function (d) { return d; })
+              .style("text-anchor", "middle")
+              .attr("dy", ".5em")
+              .attr("class", "series-title")
+              .attr("x", function (d, i) {
+                return (isRow || tableCnt === 1 ? tableNo * xWidth + (i + 0.5) * cellWidth + (spaceCellCnt * cellWidth) / 2 : (i + 0.5) * cellWidth + (cellWidth * spaceCellCnt) / 2);
+              })
+              .attr("y", function (d, i) {
+                return (isRow || tableCnt === 1 ? yBase : ((tableNo === tableCnt - 1) ? yBase :
+                  tableNo * yHeight + chartHeight));
+             });
+         // xAxis title
+         var xAxisTitle = this._svgGroup.append("text")
+             .text(xTitle)
+             .attr("x",
+               ((!isRow) || tableCnt === 1 ? xWidth / 2 : tableNo * xWidth + chartWidth / 2)
+             )
+             .attr("y",
+               (isRow || tableCnt === 1 ? yBase + (this._series && isRow ? 20 : 30) : ((tableNo === tableCnt - 1) ? yBase + (this._series && isRow ? 20 : 30) :
+                 tableNo * yHeight + chartHeight + (this._series && isRow ? 20 : 30)))
+             )
+             .attr("dy", ".5em")
+             .style("text-anchor", "middle");
+          // sereis title if necessary
+          if (this._series && isRow) {
+            var xSeriesTitle = this._svgGroup.append("text")
+             .text(this._words[tableNo].title)
+             .attr("x",
+               ((!isRow) || tableCnt === 1 ? xWidth / 2 : tableNo * xWidth + chartWidth / 2)
+             )
+             .attr("y",
+               (isRow || tableCnt === 1 ? yBase + 35 : ((tableNo === tableCnt - 1) ? yBase + 35 :
+                 tableNo * yHeight + chartHeight + 35))
+             )
+             .attr("dy", ".5em")
+             .attr("class", "series-title")
+             .style("text-anchor", "middle");
+          }
+
+       }
+
+      if (tableNo === 0 || (!this._row) || this._showRowY) {
+          var yLabels = this._svgGroup.selectAll(".yLabel-" + tableNo)
+            .data(this._y)
+            .enter().append("text")
+              .text(function (d) { return d; })
+              .style("text-anchor", "end")
+              .attr("class", "series-title") 
+              .attr("dy", ".5em")
+              .attr("x",  function (d, i) {
+                return (isRow || tableCnt === 1 ? xWidth * tableNo : 0);
+              })
+              .attr("y", function (d, i) {
+                return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 : (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 + yHeight * tableNo);
+              });
+          
+         // xAxis title
+         var yAxisTitle = this._svgGroup.append("text")
+             .text(yTitle)
+             .attr("transform", "rotate(-90)")
+             .attr("x",isRow || tableCnt === 1 ? 0 - chartHeight/2 : 0 - chartHeight/2 - tableNo * yHeight)
+             .attr("y", isRow || tableCnt === 1 ? xWidth * tableNo - (this._series && (!isRow)? 25 : 35) : -(this._series && (!isRow)? 25 : 35))
+             //.attr("dy", ".5em")
+             .style("text-anchor", "middle");
+
+          // sereis title if necessary
+          if (this._series && (!isRow)) {
+            var ySeriesTitle = this._svgGroup.append("text")
+             .text(this._words[tableNo].title)
+             .attr("transform", "rotate(-90)")
+             .attr("x",isRow || tableCnt === 1 ? 0 - chartHeight/2 : 0 - chartHeight/2 - tableNo * yHeight)
+             .attr("y", isRow || tableCnt === 1 ? xWidth * tableNo - 40 : -40)
+             .attr("class", "series-title")
+             //.attr("dy", ".5em")
+             .style("text-anchor", "middle");
+          }
+          
+      }
+        var rectangles = this._svgGroup.selectAll("rect-" + tableNo)
+          .data(this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows)
+          .enter();
+
+        var map = rectangles.append("rect");
+
+         map.attr("x", function (d) {
+             return (isRow || tableCnt === 1 ? d[0] * cellWidth + (spaceCellCnt * cellWidth) / 2 + tableNo * xWidth : d[0] * cellWidth + (spaceCellCnt * cellWidth / 2));
+          })
+          .attr("y", function(d) {
+            return (isRow || tableCnt === 1 ? d[1] * cellHeight + (cellHeight * spaceCellCnt) / 2 : d[1] * cellHeight + (cellHeight * spaceCellCnt) / 2 + tableNo * yHeight);
+          })
+
+          .attr("width", cellWidth)
+          .attr("height", cellHeight)
+          .attr('fill', function(d) {
+            return colorScale(reverseColor ? 1 -  colorDomain(d[2]) : colorDomain(d[2]));
+          });
+
+          if (this._showLabel) {
+            rectangles.append('text')
+            .text(function (d) {
+              return d[2];
+            })
+            .style('display', function (d) {
+              const textLength = this.getBBox().width;
+              const textHeight = this.getBBox().height;
+              const textTooLong = textLength > cellWidth;
+              const textTooWide = textHeight > cellHeight;
+              return textTooLong || textTooWide ? 'none' : 'initial';
+            })
+            .style('dominant-baseline', 'central')
+            .style('text-anchor', 'middle')
+            .style('fill', '#000000')
+            .attr("x", function (d) {
+               return (isRow || tableCnt === 1 ? d[0] * cellWidth + (spaceCellCnt * cellWidth) / 2 + cellWidth / 2 + tableNo * xWidth : d[0] * cellWidth + cellWidth / 2  + (spaceCellCnt * cellWidth / 2));
+            })
+            .attr("y", function(d) {
+              return (isRow || tableCnt === 1 ? d[1] * cellHeight + cellHeight / 2 + (cellHeight * spaceCellCnt) / 2 : d[1] * cellHeight + cellHeight / 2 + (cellHeight * spaceCellCnt) / 2 + tableNo * yHeight);
+            });
+          }
+
+          map.on("mouseover", function(d) {
+             d3.select(this).classed("cell-hover",true);
+           })
+           .on("mouseout", function(d) {
+             d3.select(this).classed("cell-hover",false);
+         });
+
+
+          let seriesTitle = "";
+          // add for tooltip
+          if (isSeries) {
+            seriesTitle = this._words[tableNo].title.split(":")[1]
+              + ":"
+              + this._words[tableNo].title.split(":")[2];
+          }
+          let _xTitle = xTitle;
+          let _yTitle = yTitle;
+
+          let seriesTitleLength = seriesTitle.length;
+          let maxTitleLength = seriesTitleLength > xTitleLength ?
+            (seriesTitleLength > yTitleLength ? seriesTitleLength : yTitleLength)
+            : (xTitleLength > yTitleLength ? xTitleLength : yTitleLength);
+          maxTitleLength = maxTitleLength > metricTitleLength ? maxTitleLength : metricTitleLength;
+          while (metricTitleLength ++ < (maxTitleLength)) {
+            metricTitle += '&nbsp;';
+          }
+          while (xTitleLength ++ < maxTitleLength) {
+            _xTitle += '&nbsp;';
+          }
+          while (yTitleLength ++ < maxTitleLength) {
+            _yTitle += '&nbsp;';
+          }
+          while (seriesTitleLength ++ < maxTitleLength) {
+            seriesTitle += '&nbsp;';
+          }
+          seriesTitle = isSeries ? ("<br/>"  + seriesTitle + '&nbsp;' + this._words[tableNo].title.split(":")[0]) : '';
+
+          if (this._addTooltip) {
+            map.on("mouseover", function(d) {
+              tooltip.html(metricTitle + '&nbsp;' + d[2]
+                  + "<br/>"  + _xTitle + '&nbsp;' + d[0]
+                  + "<br/>"  + _yTitle + '&nbsp;' + d[1]
+                  + seriesTitle
+                 )
+                 .style("left", (d3.event.offsetX + (d[0] > (maxX - 2) ? (0 -2 * cellWidth)  : d[0] < 2 ? 2 * cellWidth : cellWidth )) + "px")
+                 .style("top", (d3.event.offsetY + (d[1] > (maxY - 2) ? (0 - 2 * cellHeight)  : d[1] < 2 ? 2 * cellHeight : cellHeight )) + "px")
+
+                 .style("opacity", 1)
+                // .style("background-color", 'black')
+                // .style("color",'white')
+                ;
+            })
+            .on("mouseout", function(d) {
+              tooltip.style("opacity", 0);
+            });
+          }
+
+
+          /**
+          .attr('transform', function (d) {
+            const horizontalCenter = x(d) + squareWidth / 2;
+            const verticalCenter = y(d) + squareHeight / 2;
+            return `rotate(${rotate},${horizontalCenter},${verticalCenter})`;
+          });
+          **/
+
+
+        tableNo++;
+      }
+
+      // add the color legend
+
+      const legendWidth = 20;
+      const dis = (this._maxZ - this._minZ) / this._colorBucket;
+      let colorNo = 0;
+      const legendHeight = chartHeight / (2 * (this._colorBucket + 1));
+      while (colorNo != this._colorBucket + 1) {
+        this._colors[colorNo] = num2e(dis * colorNo + this._minZ);
+        colorNo++;
+      }
+
+      var legendLabels = this._svgGroup.selectAll("legendLabel")
+          .data(this._colors)
           .enter().append("text")
             .text(function (d) { return d; })
-            .attr("x", 0)
-            .attr("y", function (d, i) { return (i + 1) * cellHeight; });
-     var xLabels = this._svgGroup.selectAll(".timeLabel")
-          .data(this._x)
-          .enter().append("text")
-            .text(function(d) { return d; })
-            .attr("x",  function (d, i) { return (i + 1) * cellWidth; })
-            .attr("y", this._size[1] - this._marginBottom - cellHeight);
-    var rectangles = this._svgGroup.selectAll("rect")
-      .data(this._words)
-      .enter()
-      .append("rect");
-
-    rectangles
-    .attr("x", function (d){ return (d[0] +1 ) * cellWidth - 0.5*cellWidth; })
-    .attr("y", function(d){
-      return ( d[1] + 1 ) * cellHeight - 0.5*cellHeight;
-    })
-    .attr("width", cellWidth)
-    .attr("height", cellHeight)
-    .transition().duration(100).style("fill", function(d){
-      return colorScale(d[2]);
-    });
-    
+            .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 10)
+            .attr("y", function (d, i) { return (i + 1.5) * legendHeight; })
+            .attr("dy", "0.5em")
+            .style("text-anchor", "end");
+      var legendTitle = this._svgGroup.append("text")
+          .text(this._series ? this._words[0].tables["0"].columns[2].title : this._words[0].columns[2].title)
+          .attr("x", this._element.offsetWidth - this._marginLeft - 10)
+          .attr("y", legendHeight - 15)
+          .style("text-anchor", "end");
 
 
+      var legendRect = this._svgGroup.selectAll("legendRect")
+        .data(this._colors)
+        .enter()
+        .append("rect");
 
-         
+      legendRect
+        .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 10)
+        .attr("y", function (d, i) { return (i +1) * legendHeight; })
+        .attr("width", legendWidth)
+        .attr("height", legendHeight)
+        .style("fill", function(d){
+          return colorScale(reverseColor ? 1- colorDomain(d) : colorDomain(d));
+        });
 
-
-
-
-      const enterSelection = stage.enter();
-      const enteringTags = enterSelection.append('text');
-      enteringTags.style('font-size', getSizeInPixels);
-      enteringTags.style('font-style', this._fontStyle);
-      enteringTags.style('font-weight', () => this._fontWeight);
-      enteringTags.style('font-family', () => this._fontFamily);
-      enteringTags.style('fill', getFill);
-      enteringTags.attr('text-anchor', () => 'middle');
-      enteringTags.attr('transform', affineTransform);
-      enteringTags.attr('data-test-subj', getDisplayText);
-      enteringTags.text(getDisplayText);
-
-      const self = this;
-      enteringTags.on({
-        click: function (event) {
-          self.emit('select', event.rawText);
-        },
-        mouseover: function () {
-          d3.select(this).style('cursor', 'pointer');
-        },
-        mouseout: function () {
-          d3.select(this).style('cursor', 'default');
-        }
-      });
-
-      const movingTags = stage.transition();
-      movingTags.duration(600);
-      movingTags.style('font-size', getSizeInPixels);
-      movingTags.style('font-style', this._fontStyle);
-      movingTags.style('font-weight', () => this._fontWeight);
-      movingTags.style('font-family', () => this._fontFamily);
-      movingTags.attr('transform', affineTransform);
-
-      const exitingTags = stage.exit();
-      const exitTransition = exitingTags.transition();
-      exitTransition.duration(200);
-      exitingTags.style('fill-opacity', 1e-6);
-      exitingTags.attr('font-size', 1);
-      exitingTags.remove();
-
-      let exits = 0;
-      let moves = 0;
-      const resolveWhenDone = () => {
-        if (exits === 0 && moves === 0) {
-          this._DOMisUpdating = false;
-          resolve(true);
-        }
-      };
-      exitTransition.each(() => exits++);
-      exitTransition.each('end', () => {
-        exits--;
-        resolveWhenDone();
-      });
-      movingTags.each(() => moves++);
-      movingTags.each('end', () => {
-        moves--;
-        resolveWhenDone();
-      });
 
     });
   }
@@ -541,7 +651,7 @@ class TagCloud extends EventEmitter {
 
     this._updateContainerSize();
 
-    const canReuseLayout = keepLayout && !this._isJobRunning() && this._completedJob;
+    const canReuseLayout = false;
     this._pendingJob = (canReuseLayout) ? this._makeJobPreservingLayout() : this._makeNewJob();
     this._processPendingJob();
   }
@@ -597,8 +707,8 @@ class TagCloud extends EventEmitter {
       };
     }) : [];
     debug.size = {
-      width: this._size[0],
-      height: this._size[1]
+      width: this._element.offsetWidth,
+      height: this._element.offsetHeight
     };
     return debug;
   }
@@ -650,5 +760,28 @@ function hashWithinRange(str, max) {
   }
   return Math.abs(hash) % max;
 }
+
+
+function num2e(num){
+    if (num ===0) {
+      return '0';
+    }
+
+    var p = Math.floor(Math.log(Math.abs(num))/Math.LN10);
+    var n = num * Math.pow(10, -p);
+    return (n.toFixed(3) + 'e' + p);
+}
+
+function formatNum(num) {
+  return Math.round(num) === num ? num : num.toFixed(1);
+}
+
+function getColorValue(reverse) {
+  if (!reverse) {
+    return
+  }
+}
+
+
 
 export default TagCloud;
