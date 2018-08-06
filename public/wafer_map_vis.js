@@ -42,7 +42,6 @@ VisTypesRegistryProvider.register(function (Private) {
           name: 'metric',
           title: 'Value',
           min: 1,
-          max: 1,
           aggFilter: ['!std_dev', '!percentiles', '!percentile_ranks', '!derivative', '!geo_bounds', '!geo_centroid'],
           defaults: [
             { schema: 'metric', type: 'count' }

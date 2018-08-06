@@ -82,7 +82,7 @@ export class WaferMapVisualization {
       this._isEmptyData = true;
     }
     this._tableCnt = data.tables.length;
-    if ((!this._isEmptyData) && this._validateBucket()) {
+    if ((!this._isEmptyData) && this._validateBucket(data)) {
       this._updateParams();
       if (status.data || status.resize || status.params) {
         // we must update the data
@@ -148,14 +148,15 @@ export class WaferMapVisualization {
     return true;
   }
 
-  _validateBucket() {
+  _validateBucket(response) {
     // check the buckets and metrics count
     // TO DO, must be terms-terms or split-terms-terms
     const aggCnt = this._vis.aggs.raw.length;
     let metricCnt = 0;
     let bucketCnt = 0;
     this._series = false;
-    let seriesBucketNo = 4;
+    let seriesBucketNo = 0;
+      
     for(let aggNo =0; aggNo != aggCnt; aggNo ++) {
       if (!this._vis.aggs.raw[aggNo].enabled) {
         continue;
@@ -171,17 +172,27 @@ export class WaferMapVisualization {
           if (this._vis.aggs.raw[aggNo].schema.name === "split") {
             this._series = true;
             this._row = this._vis.aggs.raw[aggNo].params.row;
-            seriesBucketNo = aggNo;
+            seriesBucketNo = bucketCnt;
           }
           break;
       }
     }
 
-    if (bucketCnt < 2 || metricCnt != 1 || (this._series && bucketCnt != 3)
+    if (bucketCnt < 2 || metricCnt < 1 || (this._series && bucketCnt != 3)
        || (this._series && seriesBucketNo !== 1)) {
       this._isErrorBucket = true;
       return false;
     }
+    
+    if (this._series && response.tables[0].tables["0"].columns.length === 3) {
+    }
+    else if ((!this._series) && response.tables[0].columns.length === 3) {
+    }
+    else {
+      this._isErrorBucket = true;
+      return false;
+    }
+
     return true;
   }
 
