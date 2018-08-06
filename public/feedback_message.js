@@ -17,7 +17,7 @@ export class FeedbackMessage extends Component {
           The container is too small to display the entire wafer map series. Wafer maps might be cropped or omitted if the cell width or height is less than 10.
         </div>
         <div className="tagcloud-incomplete-message" style={{ display: this.state.shouldShowInvalidBucketCnt ? 'block' : 'none' }}>
-          The wafer map should ONLY have 1 metric enabled to stands for the wafer map color.
+          The wafer map should ONLY have 1 metric ENABLED and SHOW to stand for the wafer map color.
           And the buckets should be [x-coord/y-coord] or [split/x-coord/y-coord].
         </div>
       </div>

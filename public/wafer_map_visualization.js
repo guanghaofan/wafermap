@@ -233,7 +233,11 @@ export class WaferMapVisualization {
       }
       else {
         chartData = response.tables[tableNo].rows;
-        this._fieldFormat = response.tables[tableNo].columns[2].aggConfig.params.field.format;
+        var metricAgg = this._vis.aggs.find(aggConfig=> aggConfig.id === response.tables[tableNo].columns[2].aggConfig.id);
+        this._fieldFormat = metricAgg.type && metricAgg.type.getFormat(metricAgg);
+        if (!this._fieldFormat) {
+          this._fieldFormat =  _field_formats.fieldFormats.getDefaultInstance('number');
+        }
       }
 
       let rowNo = 0;
