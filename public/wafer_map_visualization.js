@@ -65,8 +65,8 @@ export class WaferMapVisualization {
     this._series = false;
     this._row = false;
     this._tableCnt = 0;
-    this._mapHeight = 10;
-    this._mapWidth = 10;
+    this._mapHeight = 5;
+    this._mapWidth = 5;
     this._maxX = 1;
     this._maxY = 1;
   }
@@ -156,7 +156,7 @@ export class WaferMapVisualization {
     let bucketCnt = 0;
     this._series = false;
     let seriesBucketNo = 0;
-      
+
     for(let aggNo =0; aggNo != aggCnt; aggNo ++) {
       if (!this._vis.aggs.raw[aggNo].enabled) {
         continue;
@@ -183,7 +183,7 @@ export class WaferMapVisualization {
       this._isErrorBucket = true;
       return false;
     }
-    
+
     if (this._series && response.tables[0].tables["0"].columns.length === 3) {
     }
     else if ((!this._series) && response.tables[0].columns.length === 3) {

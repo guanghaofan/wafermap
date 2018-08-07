@@ -66,7 +66,7 @@ class WaferMap extends EventEmitter {
     this._series = false;
     this._showRowY = false;
     this._showColumnX = false;
-    this._colorBucket = 10;
+    this._colorBucket = 8;
     this._colors = new Array(this._colorBucket);
     this._colorRange = null;
     //UTIL
@@ -233,6 +233,9 @@ class WaferMap extends EventEmitter {
         chartWidth = xWidth;
       }
 
+      if (cellWidth < 10 || cellHeight < 10) {
+        this._colorBucket = 4;
+      }
 
 
       this._emptyDOM();
