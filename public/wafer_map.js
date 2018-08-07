@@ -1,7 +1,8 @@
 import d3 from 'd3';
-import { seedColors } from 'ui/vis/components/color/seed_colors';
+//import { seedColors } from 'ui/vis/components/color/seed_colors';
 import { EventEmitter } from 'events';
 
+/**
 const ORIENTATIONS = {
   'single': () => 0,
   'right angled': (tag) => {
@@ -16,6 +17,7 @@ const D3_SCALING_FUNCTIONS = {
   'log': () => d3.scale.log(),
   'square root': () => d3.scale.sqrt()
 };
+**/
 
 class WaferMap extends EventEmitter {
 
@@ -375,19 +377,20 @@ class WaferMap extends EventEmitter {
         if (tableNo === tableCnt - 1 || this._row || this._showColumnX) {
           var xLabels = this._svgGroup.selectAll("xLabel-" + tableNo)
             .data(this._x)
-            .enter().append("text")
-              .text(function (d) { return d; })
-              .style("text-anchor", "middle")
-              .attr("dy", ".5em")
-              .attr("class", "series-title")
-              .attr("opacity", d=> {return cellWidth >= 15 ? 1 : cellWidth >= 10 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;})
-              .attr("x", function (d, i) {
-                return (isRow || tableCnt === 1 ? tableNo * xWidth + (i + 0.5) * cellWidth + (spaceCellCnt * cellWidth) / 2 : (i + 0.5) * cellWidth + (cellWidth * spaceCellCnt) / 2);
-              })
-              .attr("y", function (d, i) {
-                return (isRow || tableCnt === 1 ? yBase : ((tableNo === tableCnt - 1) ? yBase :
-                  tableNo * yHeight + chartHeight));
-             });
+          xLabels.exit().remove();
+          xLabels.enter().append("text")
+            .text(function (d) { return d; })
+            .style("text-anchor", "middle")
+            .attr("dy", ".5em")
+            .attr("class", "series-title")
+            .attr("opacity", d=> {return cellWidth >= 15 ? 1 : cellWidth >= 10 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;})
+            .attr("x", function (d, i) {
+              return (isRow || tableCnt === 1 ? tableNo * xWidth + (i + 0.5) * cellWidth + (spaceCellCnt * cellWidth) / 2 : (i + 0.5) * cellWidth + (cellWidth * spaceCellCnt) / 2);
+            })
+            .attr("y", function (d, i) {
+              return (isRow || tableCnt === 1 ? yBase : ((tableNo === tableCnt - 1) ? yBase :
+                tableNo * yHeight + chartHeight));
+           });
          // xAxis title
          var xAxisTitle = this._svgGroup.append("text")
              .text(xTitle)
@@ -420,19 +423,20 @@ class WaferMap extends EventEmitter {
 
       if (tableNo === 0 || (!this._row) || this._showRowY) {
           var yLabels = this._svgGroup.selectAll(".yLabel-" + tableNo)
-            .data(this._y)
-            .enter().append("text")
-              .text(function (d) { return d; })
-              .style("text-anchor", "end")
-              .attr("class", "series-title")
-              .attr("opacity", d=> {return cellHeight >= 15 ? 1 : cellHeight >= 10 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;})
-              .attr("dy", ".5em")
-              .attr("x",  function (d, i) {
-                return (isRow || tableCnt === 1 ? xWidth * tableNo : 0);
-              })
-              .attr("y", function (d, i) {
-                return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 : (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 + yHeight * tableNo);
-              });
+            .data(this._y);
+          yLabels.exit().remove();
+          yLabels.enter().append("text")
+            .text(function (d) { return d; })
+            .style("text-anchor", "end")
+            .attr("class", "series-title")
+            .attr("opacity", d=> {return cellHeight >= 15 ? 1 : cellHeight >= 10 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;})
+            .attr("dy", ".5em")
+            .attr("x",  function (d, i) {
+              return (isRow || tableCnt === 1 ? xWidth * tableNo : 0);
+            })
+            .attr("y", function (d, i) {
+              return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 : (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 + yHeight * tableNo);
+            });
 
          // xAxis title
          var yAxisTitle = this._svgGroup.append("text")
@@ -457,17 +461,17 @@ class WaferMap extends EventEmitter {
 
       }
         var rectangles = this._svgGroup.selectAll("rect-" + tableNo)
-          .data(this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows)
-          .enter();
+          .data(this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows);
+        rectangles.exit().remove();
 
-        var map = rectangles.append("rect");
+        var map = rectangles.enter().append("rect");
 
          map.attr("x", function (d) {
              return (isRow || tableCnt === 1 ? d[0] * cellWidth + (spaceCellCnt * cellWidth) / 2 + tableNo * xWidth : d[0] * cellWidth + (spaceCellCnt * cellWidth / 2));
-          })
-          .attr("y", function(d) {
+           })
+           .attr("y", function(d) {
             return (isRow || tableCnt === 1 ? d[1] * cellHeight + (cellHeight * spaceCellCnt) / 2 : d[1] * cellHeight + (cellHeight * spaceCellCnt) / 2 + tableNo * yHeight);
-          })
+           })
 
           .attr("width", cellWidth)
           .attr("height", cellHeight)
@@ -583,7 +587,9 @@ class WaferMap extends EventEmitter {
 
       var legendLabels = this._svgGroup.selectAll("legendLabel")
           .data(colors)
-          .enter().append("text")
+          .exit().remove();
+
+      legendLabels.enter().append("text")
             .text(function (d) { return d; })
             .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 10)
             .attr("y", function (d, i) { return (i + 1.5) * legendHeight; })
@@ -596,12 +602,12 @@ class WaferMap extends EventEmitter {
           .style("text-anchor", "end");
 
 
-      var legendRect = this._svgGroup.selectAll("legendRect")
-        .data(colors)
-        .enter()
-        .append("rect");
+      var legendRect = this._svgGroup.selectAll("legendRect").data(colors);
+      legendRect.exit().remove();
 
       legendRect
+        .endter()
+        .append("rect")
         .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 10)
         .attr("y", function (d, i) { return (i +1) * legendHeight; })
         .attr("width", legendWidth)
@@ -665,42 +671,6 @@ class WaferMap extends EventEmitter {
   }
 
   /**
-  async _updateLayout(job) {
-
-    if (job.size[0] <= 0 || job.size[1] <= 0) {
-      // If either width or height isn't above 0 we don't relayout anything,
-      // since the d3-cloud will be stuck in an infinite loop otherwise.
-      return;
-    }
-
-    const mapSizeToFontSize = this._makeTextSizeMapper();
-    const tagCloudLayoutGenerator = d3TagCloud();
-    tagCloudLayoutGenerator.size(job.size);
-    tagCloudLayoutGenerator.padding(this._padding);
-    tagCloudLayoutGenerator.rotate(ORIENTATIONS[this._orientation]);
-    tagCloudLayoutGenerator.font(this._fontFamily);
-    tagCloudLayoutGenerator.fontStyle(this._fontStyle);
-    tagCloudLayoutGenerator.fontWeight(this._fontWeight);
-    tagCloudLayoutGenerator.fontSize(tag => mapSizeToFontSize(tag.value));
-    tagCloudLayoutGenerator.random(seed);
-    tagCloudLayoutGenerator.spiral(this._spiral);
-    tagCloudLayoutGenerator.words(job.words);
-    tagCloudLayoutGenerator.text(getDisplayText);
-    tagCloudLayoutGenerator.timeInterval(this._timeInterval);
-
-    this._layoutIsUpdating = true;
-    await new Promise((resolve) => {
-      tagCloudLayoutGenerator.on('end', () => {
-        this._layoutIsUpdating = false;
-        resolve(true);
-      });
-      tagCloudLayoutGenerator.start();
-    });
-  }
-  **/
-
-
-  /**
    * Returns debug info. For debugging only.
    * @return {*}
    */
@@ -726,9 +696,6 @@ class WaferMap extends EventEmitter {
 
 WaferMap.STATUS = { COMPLETE: 0, INCOMPLETE: 1 };
 
-function seed() {
-  return 0.5;//constant seed (not random) to ensure constant layouts for identical data
-}
 
 function getText(word) {
   return word.rawText;
@@ -755,11 +722,12 @@ function getValue(tag) {
 function getSizeInPixels(tag) {
   return `${tag.size}px`;
 }
-
+/**
 const colorScale = d3.scale.ordinal().range(seedColors);
 function getFill(tag) {
   return colorScale(tag.text);
 }
+**/
 
 function hashWithinRange(str, max) {
   str = JSON.stringify(str);
