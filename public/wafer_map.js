@@ -461,12 +461,14 @@ class WaferMap extends EventEmitter {
 
       }
         var rectangles = this._svgGroup.selectAll("rect-" + tableNo)
-          .data(this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows);
+          .data(this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows)
         rectangles.exit().remove();
+        rectangles
+          .enter()
+          .append("g");
 
-        var map = rectangles.enter().append("rect");
-
-         map.attr("x", function (d) {
+        var map = rectangles.append("rect")
+           .attr("x", function (d) {
              return (isRow || tableCnt === 1 ? d[0] * cellWidth + (spaceCellCnt * cellWidth) / 2 + tableNo * xWidth : d[0] * cellWidth + (spaceCellCnt * cellWidth / 2));
            })
            .attr("y", function(d) {
@@ -585,28 +587,26 @@ class WaferMap extends EventEmitter {
       }
 
 
-      var legendLabels = this._svgGroup.selectAll("legendLabel")
-          .data(colors)
-          .exit().remove();
-
+      var legendLabels = this._svgGroup.selectAll("legendLabel").data(colors);
+      legendLabels.exit().remove();
       legendLabels.enter().append("text")
-            .text(function (d) { return d; })
-            .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 10)
-            .attr("y", function (d, i) { return (i + 1.5) * legendHeight; })
-            .attr("dy", "0.5em")
-            .style("text-anchor", "end");
+        .text(function (d) { return d; })
+        .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 10)
+        .attr("y", function (d, i) { return (i + 1.5) * legendHeight; })
+        .attr("dy", "0.5em")
+        .style("text-anchor", "end");
       var legendTitle = this._svgGroup.append("text")
-          .text(this._series ? this._words[0].tables["0"].columns[2].title : this._words[0].columns[2].title)
-          .attr("x", this._element.offsetWidth - this._marginLeft - 10)
-          .attr("y", legendHeight - 15)
-          .style("text-anchor", "end");
+        .text(this._series ? this._words[0].tables["0"].columns[2].title : this._words[0].columns[2].title)
+        .attr("x", this._element.offsetWidth - this._marginLeft - 10)
+        .attr("y", legendHeight - 15)
+        .style("text-anchor", "end");
 
 
       var legendRect = this._svgGroup.selectAll("legendRect").data(colors);
       legendRect.exit().remove();
 
       legendRect
-        .endter()
+        .enter()
         .append("rect")
         .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 10)
         .attr("y", function (d, i) { return (i +1) * legendHeight; })
