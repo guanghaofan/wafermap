@@ -66,8 +66,8 @@ class WaferMap extends EventEmitter {
     this._series = false;
     this._showRowY = false;
     this._showColumnX = false;
-    this._colorBucket = 8;
-    this._colors = new Array(this._colorBucket);
+    this._colorBucket = 9;
+    //this._colors = new Array(this._colorBucket);
     this._colorRange = null;
     //UTIL
     this._setTimeoutId = null;
@@ -233,7 +233,7 @@ class WaferMap extends EventEmitter {
         chartWidth = xWidth;
       }
 
-      if (cellWidth < 10 || cellHeight < 10) {
+      if (cellHeight < 10) {
         this._colorBucket = 4;
       }
 
@@ -569,18 +569,20 @@ class WaferMap extends EventEmitter {
       }
 
       // add the color legend
-
+      var colors = [];
       const legendWidth = 20;
       const dis = (this._maxZ - this._minZ) / this._colorBucket;
       let colorNo = 0;
       const legendHeight = chartHeight / (2 * (this._colorBucket + 1));
       while (colorNo != this._colorBucket + 1) {
-        this._colors[colorNo] = num2e(dis * colorNo + this._minZ);
+       // this._colors[colorNo] = num2e(dis * colorNo + this._minZ);
+        colors.push(num2e(dis * colorNo + this._minZ));
         colorNo++;
       }
 
+
       var legendLabels = this._svgGroup.selectAll("legendLabel")
-          .data(this._colors)
+          .data(colors)
           .enter().append("text")
             .text(function (d) { return d; })
             .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 10)
@@ -595,7 +597,7 @@ class WaferMap extends EventEmitter {
 
 
       var legendRect = this._svgGroup.selectAll("legendRect")
-        .data(this._colors)
+        .data(colors)
         .enter()
         .append("rect");
 
