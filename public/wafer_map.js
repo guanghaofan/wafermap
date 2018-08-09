@@ -77,13 +77,14 @@ class WaferMap extends EventEmitter {
     this._layoutIsUpdating = null;
     this._allInViewBox = false;
     this._DOMisUpdating = false;
+    this._paramsOnly = false;
     //DATA
     this._x = null;
     this._y = null;
     this._showGrid = false;
   }
 
-  setOptions(options) {
+  setOptions(options, paramsOnly) {
 
     if (JSON.stringify(options) === this._optionsAsString) {
       return;

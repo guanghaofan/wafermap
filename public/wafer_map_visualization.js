@@ -76,14 +76,14 @@ export class WaferMapVisualization {
     this._isErrorBucket = false;
     this._isSmallSize = false;
     this._isEmptyData = false;
-
+    const paramsOnly = (!status.data) && (!status.resize) && status.params;
     if(!(data && data.tables.length)) {
       // no data;
       this._isEmptyData = true;
     }
     this._tableCnt = data.tables.length;
     if ((!this._isEmptyData) && this._validateBucket(data)) {
-      this._updateParams();
+      this._waferMap.setOptions(this._vis.params, paramsOnly);
       if (status.data || status.resize || status.params) {
         // we must update the data
         if (status.data) {
@@ -196,8 +196,8 @@ export class WaferMapVisualization {
     return true;
   }
 
-  _updateParams() {
-    this._waferMap.setOptions(this._vis.params);
+  _updateParams(paramsOnly) {
+    this._waferMap.setOptions(this._vis.params, paramsOnly);
   }
 
   _generateData(response) {
