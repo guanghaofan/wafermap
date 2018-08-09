@@ -582,7 +582,8 @@ class WaferMap extends EventEmitter {
       const legendHeight = chartHeight / (2 * (this._colorBucket + 1));
       while (colorNo != this._colorBucket + 1) {
        // this._colors[colorNo] = num2e(dis * colorNo + this._minZ);
-        colors.push(num2e(dis * colorNo + this._minZ));
+        const colorValue = dis * colorNo + this._minZ;
+        colors.push(num2e(colorNo === this._colorBucket ? this._maxZ : colorValue));
         colorNo++;
       }
 
