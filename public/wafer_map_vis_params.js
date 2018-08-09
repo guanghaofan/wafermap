@@ -1,9 +1,9 @@
 import { uiModules } from 'ui/modules';
 import waferMapVisParamsTemplate from './wafer_map_vis_params.html';
-import noUiSlider from 'no-ui-slider';
-import 'no-ui-slider/css/nouislider.css';
-import 'no-ui-slider/css/nouislider.pips.css';
-import 'no-ui-slider/css/nouislider.tooltips.css';
+//import noUiSlider from 'no-ui-slider';
+//import 'no-ui-slider/css/nouislider.css';
+//import 'no-ui-slider/css/nouislider.pips.css';
+//import 'no-ui-slider/css/nouislider.tooltips.css';
 
 uiModules.get('kibana/table_vis')
   .directive('wafermapVisParams', function () {

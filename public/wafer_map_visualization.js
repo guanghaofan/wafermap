@@ -221,12 +221,6 @@ export class WaferMapVisualization {
         if (!this._fieldFormat) {
            this._fieldFormat =  _field_formats.fieldFormats.getDefaultInstance('number');
         }
-        // this is to fix the fake status.data changed once there's split chart bucket
-        if (this._series) {
-          if (typeof chartData[0][2] === 'string') {
-            return;
-          }
-        }
 
         //this._fieldFormat = aggMetric.params.field.format;
        // this._fieldFormat = this._vis.aggs[0].params.field.format;
@@ -239,6 +233,11 @@ export class WaferMapVisualization {
           this._fieldFormat =  _field_formats.fieldFormats.getDefaultInstance('number');
         }
       }
+      // this is to fix the fake status.data changed once there's split chart bucket
+      if (typeof chartData[0][2] === 'string') {
+        return;
+      }
+
 
       let rowNo = 0;
       let columnNo =0;

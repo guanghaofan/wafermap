@@ -77,7 +77,7 @@ class WaferMap extends EventEmitter {
     this._layoutIsUpdating = null;
     this._allInViewBox = false;
     this._DOMisUpdating = false;
-
+    //DATA
     this._x = null;
     this._y = null;
     this._showGrid = false;
@@ -133,7 +133,7 @@ class WaferMap extends EventEmitter {
   }
 
   _isJobRunning() {
-    return (this._setTimeoutId || this._layoutIsUpdating || this._DOMisUpdating);
+    return (this._setTimeoutId || this._DOMisUpdating);
   }
 
   async _processPendingJob() {
@@ -615,7 +615,8 @@ class WaferMap extends EventEmitter {
         .style("fill", function(d){
           return colorScale(reverseColor ? 1- colorDomain(d) : colorDomain(d));
         });
-
+     this._DOMisUpdating = false;
+     resolve(true);
 
     });
   }
