@@ -95,7 +95,7 @@ class WaferMap extends EventEmitter {
     this._reverseColor = options.reverseColor;
   }
 
-  setData(minZ, maxZ, x, y, data, row, series) {
+  setData(minZ, maxZ, x, y, data, row, series, colorCategory) {
     //this._x = [];
     //this._y = [];
     this._minZ = minZ;
@@ -105,6 +105,7 @@ class WaferMap extends EventEmitter {
     this._words = data;
     this._row = row;
     this._series =series;
+    this._colorBucket = colorCategory === 2 ? 1 : 9;
     //this._xTitle = xTitle;
     //this._yTitle = yTitle;
   }
@@ -236,7 +237,9 @@ class WaferMap extends EventEmitter {
       }
 
       if (cellHeight < 10) {
-        this._colorBucket = 4;
+        if (this._colorBucket !== 2) {
+          this._colorBucket = 4;
+        }
       }
 
 

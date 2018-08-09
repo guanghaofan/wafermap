@@ -214,6 +214,7 @@ export class WaferMapVisualization {
     function formatNum(num) {
       return Math.round(num) === num ? num : num.toFixed(3);
     }
+    var category = [];
 
 
     while (tableNo !== this._tableCnt) {
@@ -260,6 +261,11 @@ export class WaferMapVisualization {
           minZ = (minZ > chartData[rowNo][2] ? chartData[rowNo][2] : minZ);
           chartData[rowNo][2] = this._fieldFormat.getConverterFor('text')(chartData[rowNo][2], null, null, null).replace(',', '');
         }
+        if (category && category.length < 3) {
+          if (!category.includes(chartData[rowNo][2])) {
+            category.push(chartData[rowNo][2]);
+          }
+        }
         rowNo++;
       }
       tableNo++;
@@ -280,6 +286,6 @@ export class WaferMapVisualization {
       x[columnNo] = columnNo;
       columnNo++;
     }
-    this._waferMap.setData(minZ, maxZ, x, y, response.tables, this._row, this._series);
+    this._waferMap.setData(minZ, maxZ, x, y, response.tables, this._row, this._series, category.length);
   }
 }
