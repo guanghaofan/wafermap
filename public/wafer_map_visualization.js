@@ -1,5 +1,6 @@
 import WaferMap from './wafer_map';
-import { Observable } from 'rxjs';
+import * as Rx from 'rxjs';
+import { take } from 'rxjs/operators';
 import { render, unmountComponentAtNode } from 'react-dom';
 import React from 'react';
 
@@ -42,14 +43,18 @@ export class WaferMapVisualization {
       this._vis.API.queryFilter.addFilters(filter);
     });
     **/
-    this._renderComplete$ = Observable.fromEvent(this._waferMap, 'renderComplete');
+    this._renderComplete$ = Rx.fromEvent(this._waferMap, 'renderComplete');
 
     this._isSmallSize = false;
     this._isErrorBucket = false;
     this._isEmptyData = false;
     this._feedbackNode = document.createElement('div');
     this._containerNode.appendChild(this._feedbackNode);
-    this._feedbackMessage = render(<FeedbackMessage />, this._feedbackNode);
+
+    this._feedbackMessage = React.createRef();
+         render(<FeedbackMessage ref={this._feedbackMessage} />, this._feedbackNode);
+
+    //this._feedbackMessage = render(<FeedbackMessage />, this._feedbackNode);
 
     /**
     this._labelNode = document.createElement('div');
@@ -95,7 +100,7 @@ export class WaferMapVisualization {
       }
     }
 
-    this._feedbackMessage.setState({
+    this._feedbackMessage.current.setState({
       shouldShowInvalidBucketCnt: this._isErrorBucket,
       shouldShowIncomplete: this._isSmallSize,
       shouldShowEmptyData: this._isEmptyData,
@@ -115,7 +120,7 @@ export class WaferMapVisualization {
     });
     **/
 
-    await this._renderComplete$.take(1).toPromise();
+    await this._renderComplete$.pipe(take(1)).toPromise();
 
   }
 
