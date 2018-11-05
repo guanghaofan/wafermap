@@ -4,7 +4,7 @@
       Show Tooltips
     </label>
     <div class="kuiSideBarFormRow__control">
-      <input class="kuiCheckBox" id="addTooltip" type="checkbox" ng-model="vis.params.addTooltip">
+      <input class="kuiCheckBox" id="addTooltip" type="checkbox" ng-model="editorState.params.addTooltip">
     </div>
   </div>
 
@@ -16,7 +16,7 @@
       <select
         id="colorSchema"
         class="form-control"
-        ng-model="vis.params.colorSchema"
+        ng-model="editorState.params.colorSchema"
         ng-options="mode for mode in config.collections.colorSchemas"
       ></select>
     </div>
@@ -27,7 +27,7 @@
       Reverse Color
     </label>
     <div class="kuiSideBarFormRow__control">
-      <input class="kuiCheckBox" id="reverseColor" type="checkbox" ng-model="vis.params.reverseColor">
+      <input class="kuiCheckBox" id="reverseColor" type="checkbox" ng-model="editorState.params.reverseColor">
     </div>
   </div>
   
@@ -36,7 +36,7 @@
       Show Label
     </label>
     <div class="kuiSideBarFormRow__control">
-      <input class="kuiCheckBox" id="showLabel" type="checkbox" ng-model="vis.params.showLabel">
+      <input class="kuiCheckBox" id="showLabel" type="checkbox" ng-model="editorState.params.showLabel">
     </div>
   </div>
 </div>
