@@ -389,7 +389,8 @@ class WaferMap extends EventEmitter {
             .attr("class", "series-title")
             .attr("opacity", d=> {return cellWidth >= 15 ? 1 : cellWidth >= 10 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;})
             .attr("x", function (d, i) {
-              return (isRow || tableCnt === 1 ? tableNo * xWidth + (i + 0.5) * cellWidth + (spaceCellCnt * cellWidth) / 2 : (i + 0.5) * cellWidth + (cellWidth * spaceCellCnt) / 2);
+              i =  revertX(i, maxX);
+              return (isRow || tableCnt === 1 ? tableNo * xWidth + ( i + 0.5) * cellWidth + (spaceCellCnt * cellWidth) / 2 : (i + 0.5) * cellWidth + (cellWidth * spaceCellCnt) / 2);
             })
             .attr("y", function (d, i) {
               return (isRow || tableCnt === 1 ? yBase : ((tableNo === tableCnt - 1) ? yBase :
@@ -439,6 +440,7 @@ class WaferMap extends EventEmitter {
               return (isRow || tableCnt === 1 ? xWidth * tableNo : 0);
             })
             .attr("y", function (d, i) {
+              i = revertY(i, maxY);
               return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 : (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 + yHeight * tableNo);
             });
 
@@ -473,10 +475,12 @@ class WaferMap extends EventEmitter {
 
         var map = rectangles.append("rect")
            .attr("x", function (d) {
-             return (isRow || tableCnt === 1 ? d[0] * cellWidth + (spaceCellCnt * cellWidth) / 2 + tableNo * xWidth : d[0] * cellWidth + (spaceCellCnt * cellWidth / 2));
+             var x = revertX(d[0], maxX);
+             return (isRow || tableCnt === 1 ? x * cellWidth + (spaceCellCnt * cellWidth) / 2 + tableNo * xWidth : x * cellWidth + (spaceCellCnt * cellWidth / 2));
            })
            .attr("y", function(d) {
-            return (isRow || tableCnt === 1 ? d[1] * cellHeight + (cellHeight * spaceCellCnt) / 2 : d[1] * cellHeight + (cellHeight * spaceCellCnt) / 2 + tableNo * yHeight);
+            var y = revertY(d[1], maxY);
+            return (isRow || tableCnt === 1 ? y * cellHeight + (cellHeight * spaceCellCnt) / 2 : y * cellHeight + (cellHeight * spaceCellCnt) / 2 + tableNo * yHeight);
            })
 
           .attr("width", cellWidth)
@@ -501,10 +505,12 @@ class WaferMap extends EventEmitter {
             .style('text-anchor', 'middle')
             .style('fill', '#000000')
             .attr("x", function (d) {
-               return (isRow || tableCnt === 1 ? d[0] * cellWidth + (spaceCellCnt * cellWidth) / 2 + cellWidth / 2 + tableNo * xWidth : d[0] * cellWidth + cellWidth / 2  + (spaceCellCnt * cellWidth / 2));
+               var x = revertX(d[0], maxX);
+               return (isRow || tableCnt === 1 ? x * cellWidth + (spaceCellCnt * cellWidth) / 2 + cellWidth / 2 + tableNo * xWidth : x * cellWidth + cellWidth / 2  + (spaceCellCnt * cellWidth / 2));
             })
             .attr("y", function(d) {
-              return (isRow || tableCnt === 1 ? d[1] * cellHeight + cellHeight / 2 + (cellHeight * spaceCellCnt) / 2 : d[1] * cellHeight + cellHeight / 2 + (cellHeight * spaceCellCnt) / 2 + tableNo * yHeight);
+              var y = revertY(d[1], maxY);
+              return (isRow || tableCnt === 1 ? y * cellHeight + cellHeight / 2 + (cellHeight * spaceCellCnt) / 2 : y * cellHeight + cellHeight / 2 + (cellHeight * spaceCellCnt) / 2 + tableNo * yHeight);
             });
           }
 
@@ -763,6 +769,14 @@ function getColorValue(reverse) {
   if (!reverse) {
     return
   }
+}
+
+function revertX(x, maxX){
+  return maxX - x;
+}
+
+function revertY(y, maxY){
+  return maxY - y;
 }
 
 
