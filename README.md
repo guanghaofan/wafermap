@@ -1,8 +1,6 @@
-# wafermap
+# WaferMap : a kibana plugin to visualize the wafer map
 
-> wafer map
-
----
+![a](wafermap.png)
 
 ## development
 
