@@ -23,7 +23,7 @@ VisTypesRegistryProvider.register(function (Private) {
       defaults: {
         colorSchema: 'Green-Red',
         reverseColor: false,
-        addTooltip: false,
+        addTooltip: true,
         showLabel: true
       }
     },
