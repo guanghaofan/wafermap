@@ -4,7 +4,7 @@
   "description": "wafer map",
   "main": "index.js",
   "kibana": {
-    "version": "6.4.2",
+    "version": "6.4.4",
     "templateVersion": "1.0.0"
   },
   "scripts": {
