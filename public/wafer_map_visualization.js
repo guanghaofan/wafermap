@@ -29,8 +29,8 @@ export class WaferMapVisualization {
     this._incomplete = false;
     this._invalidBucketCnt = false;
     this._marginTop = 20;
-    this._marginBottom = 50;
-    this._marginLeft = 50;
+    this._marginBottom = 10;
+    this._marginLeft = 40;
     this._marginRight = 110;
     this._marginNeighbor = 30;
     this._waferMap = new WaferMap(cloudContainer, this._marginLeft, this._marginRight, this._marginTop, this._marginBottom, this._marginNeighbor);
@@ -94,9 +94,9 @@ export class WaferMapVisualization {
         if (status.data) {
           this._generateData(data);
         }
-        if(this._validateCellSize()) {
+        //if(this._validateCellSize()) {
           this._waferMap.upateSVG();
-        }
+        //}
       }
     }
 
