@@ -1,4 +1,5 @@
 import d3 from 'd3';
+//import d3Tip from "d3-tip"
 //import { seedColors } from 'ui/vis/components/color/seed_colors';
 import { EventEmitter } from 'events';
 
@@ -82,6 +83,10 @@ class WaferMap extends EventEmitter {
     this._x = null;
     this._y = null;
     this._showGrid = false;
+
+    //LAYOUT
+    this._rowCnt = 1;
+    this._columnCnt = 1;
   }
 
   setOptions(options, paramsOnly) {
@@ -210,61 +215,11 @@ class WaferMap extends EventEmitter {
       let cellWidth = 0;
       let chartWidth = 0; // = xWidth - neighbor
       let chartHeight = 0;
-      let spaceCellCnt = 0.5;
-
-      if (tableCnt === 1) {
-        cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) / (this._y.length + spaceCellCnt);
-        cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / ((this._x.length + spaceCellCnt) * tableCnt);
-        xWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / tableCnt;
-        chartWidth = xWidth;
-        yHeight = this._element.offsetHeight - this._marginTop - this._marginBottom;
-        chartHeight = yHeight;
-      }
-      else if (this._row) {
-        cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) / (this._y.length + spaceCellCnt);
-        cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight - (tableCnt - 1) * this._marginNeighbor) / ((this._x.length + spaceCellCnt) * tableCnt);
-        xWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight - (tableCnt - 1) * this._marginNeighbor) / tableCnt + this._marginNeighbor;
-        chartWidth = xWidth - this._marginNeighbor;
-        yHeight = this._element.offsetHeight - this._marginTop - this._marginBottom;
-        chartHeight = yHeight;
-      }
-      else {
-        cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom - (tableCnt - 1) * this._marginNeighbor) /((this._y.length + spaceCellCnt) * tableCnt);
-        cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / (this._x.length + spaceCellCnt);
-        yHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom - (tableCnt - 1) * this._marginNeighbor) /tableCnt + this._marginNeighbor;
-        chartHeight = yHeight - this._marginNeighbor;
-        xWidth = this._element.offsetWidth - this._marginLeft - this._marginRight;
-        chartWidth = xWidth;
-      }
-
-      if (cellHeight < 10) {
-        if (this._colorBucket !== 2) {
-          this._colorBucket = 4;
-        }
-      }
+      let spaceCellCnt = 1.5;
 
 
       this._emptyDOM();
-      /**
-      var cellHeight = (this._element.offsetHeight - this._marginTop - this._marginBottom) /(this._y.length + 2);
-      var cellWidth = (this._element.offsetWidth - this._marginLeft - this._marginRight) / (this._x.length + 2)
-      var colorDomain = d3.extent(this._words, function(d){
-        return d[2];
-      });
 
-
-      var colorScale = d3.scaleLinear()
-        .domain(colorDomain)
-        .range(["green","blue"]);
-
-      function x(d, i) {
-        return (i + 1) * cellWidth + this._marginLeft;
-      }
-
-      function rectx(d, i) {
-        return (d.x +1 ) * cellWidth - 0.5*cellWidth + this._marginLeft;
-      }
-      */
 
       this._colorRange = (this._colorSchema === 'Green-Red' ? ["#008000", "#FF0000"] :
                         this._colorSchema === 'Green-Blue' ? ["#008000", "#0000FF"] :
@@ -293,8 +248,9 @@ class WaferMap extends EventEmitter {
       let metricTitle = this._series ? this._words[tableNo].tables["0"].columns[2].title : this._words[tableNo].columns[2].title;
       const xTitle = this._series ? this._words[tableNo].tables["0"].columns[0].title : this._words[tableNo].columns[0].title;
       const yTitle = this._series ? this._words[tableNo].tables["0"].columns[1].title : this._words[tableNo].columns[1].title;
-      let xTitleLength = xTitle.length;
-      let yTitleLength = yTitle.length;
+
+      let xTitleLength = xTitle.split(":")[0].length;
+      let yTitleLength = yTitle.split(":")[0].length;
       let metricTitleLength = metricTitle.length;
 
       const maxX = this._x.length - 1;
@@ -303,83 +259,70 @@ class WaferMap extends EventEmitter {
       const isRow = this._row;
       const isSeries = this._series;
       const yBase = this._element.offsetHeight - this._marginBottom - this._marginTop;
-      while (tableNo !== tableCnt) {
-        /**
-        var colorDomain = d3.scale.linear().domain(d3.extent(this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows, function(d){
-            return d[2];
-          })).range([0,1]);
-        **/
+
+  const height = this._element.offsetHeight - this._marginTop - this._marginBottom;
+  const width = this._element.offsetWidth - this._marginLeft - this._marginRight;
+
+	if (tableCnt === 1) {
+		this._columnCnt = 1;
+		this._rowCnt = 1;
+	}
+	else {
+	      let colBasedTotalCnt = 0;
+	      let columnCnt = 0;
+	      let rowCnt = 0;
+
+	      while (columnCnt ++ < 50) {
+		      rowCnt = (columnCnt * height / width);
+		      if (rowCnt >= 1) {
+			      rowCnt = Math.floor(rowCnt);
+			      colBasedTotalCnt = columnCnt * rowCnt;
+			      if (colBasedTotalCnt >= tableCnt) {
+			        this._rowCnt = rowCnt;
+			        this._columnCnt = columnCnt;
+			        break;
+			      }
+		      }
+	      }
+
+	      let rowBasedTotalCnt = 0;
+	      rowCnt = 0;
+	      columnCnt = 0;
+	      while (rowCnt ++ < 50) {
+		      columnCnt = (rowCnt * width / height);
+		      if (columnCnt >= 1) {
+			      columnCnt = Math.floor(columnCnt);
+			      rowBasedTotalCnt = columnCnt * rowCnt;
+			      if (rowBasedTotalCnt >= tableCnt) {
+			        if(rowBasedTotalCnt < colBasedTotalCnt) {
+			          this._rowCnt = rowCnt;
+			          this._columnCnt = columnCnt;
+			        }
+			        break;
+			      }
+		      }
+		    }
+  }
+  chartHeight = height / this._rowCnt;
+  chartWidth = width / this._columnCnt;
+
+  cellHeight = (height / this._rowCnt - this._marginNeighbor) / (this._y.length + spaceCellCnt);
+	cellWidth = (width / this._columnCnt - this._marginNeighbor) / (this._x.length + spaceCellCnt);
+	if (cellHeight < 10) {
+	  if (this._colorBucket !== 2) {
+			  this._colorBucket = 4;
+		}
+  }
 
 
-        if (this._showGrid) {
-          var yLines = this._svgGroup.selectAll("line-" + tableNo)
-            .data(this._x)
-            .enter()
-            .append("line");
+  while (tableNo !== tableCnt) {
+    let rowNo = Math.floor(tableNo / this._columnCnt);
+    let ltx = (tableNo % this._columnCnt) / this._columnCnt * width;
+    let lty = rowNo * (height / this._rowCnt);
 
-          yLines
-           .attr('class', 'grid')
-           .attr("x1", function (d, i) {
-                return (isRow || tableCnt === 1 ? tableNo * xWidth + (i + 0.5) * cellWidth + (spaceCellCnt * cellWidth) / 2 : (i + 0.5) * cellWidth + (cellWidth * spaceCellCnt) / 2);
-              })
-           .attr("y1", function (d, i) {
-                return (isRow || tableCnt === 1 ? yBase : ((tableNo === tableCnt - 1) ? yBase :
-                  tableNo * yHeight + chartHeight));
-             })
-           .attr("x2", function (d, i) {
-                return (isRow || tableCnt === 1 ? tableNo * xWidth + (i + 0.5) * cellWidth + (spaceCellCnt * cellWidth) / 2 : (i + 0.5) * cellWidth + (cellWidth * spaceCellCnt) / 2);
-              })
+    // plot the last row x-axis only
 
-           .attr("y2", function (d, i) {
-                return (isRow || tableCnt === 1 ? yBase - chartHeight : ((tableNo === tableCnt - 1) ? yBase - chartHeight :
-                  tableNo * yHeight));
-             })
-           .attr("stroke-width", 1)
-           .attr("stroke", "black");
-
-          var xLines = this._svgGroup.selectAll("line-" + tableNo)
-            .data(this._y)
-            .enter()
-            .append("line");
-
-          xLines
-           .attr('class', 'grid')
-           .attr("x1", function (d, i) {
-                return (isRow || tableCnt === 1 ? xWidth * tableNo : 0);
-             })
-           .attr("y1", function (d, i) {
-                return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 : (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 + yHeight * tableNo);
-              })
-
-           .attr("x2", function (d, i) {
-                return (isRow || tableCnt === 1 ? xWidth * tableNo + xWidth : xWidth);
-              })
-           .attr("y2", function (d, i) {
-                return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 : (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 + yHeight * tableNo);
-              })
-
-           .attr("stroke-width", 1)
-           .attr("stroke", "black");
-        }
-        /**
-        if (this._series) {
-            // split series lable
-            this._svgGroup.select("series")
-              .data (this._words[tableNo].title)
-              .enter().append("text")
-                .text(this._words[tableNo].title)
-                .style("text-anchor", "middle")
-                .attr("x",
-                  isRow ? xWidth * tableNo + chartWidth / 2 : 0
-                )
-                .attr("y", isRow ? yHeight : yHeight * tableNo + yHeight / 2);
-        }
-        **/
-
-
-        // Always show the first y label and last x
-        if (tableNo === tableCnt - 1 || this._row || this._showColumnX) {
-          var xLabels = this._svgGroup.selectAll("xLabel-" + tableNo)
+      var xLabels = this._svgGroup.selectAll("xLabel-" + tableNo)
             .data(this._x)
           xLabels.exit().remove();
           xLabels.enter().append("text")
@@ -390,43 +333,40 @@ class WaferMap extends EventEmitter {
             .attr("opacity", d=> {return cellWidth >= 15 ? 1 : cellWidth >= 10 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;})
             .attr("x", function (d, i) {
               i =  revertX(i, maxX);
-              return (isRow || tableCnt === 1 ? tableNo * xWidth + ( i + 0.5) * cellWidth + (spaceCellCnt * cellWidth) / 2 : (i + 0.5) * cellWidth + (cellWidth * spaceCellCnt) / 2);
+              return (i + 0.5) * cellWidth + ltx;
             })
             .attr("y", function (d, i) {
-              return (isRow || tableCnt === 1 ? yBase : ((tableNo === tableCnt - 1) ? yBase :
-                tableNo * yHeight + chartHeight));
+              return lty + (maxY + 1 + spaceCellCnt / 2) * cellHeight;
            });
          // xAxis title
+
          var xAxisTitle = this._svgGroup.append("text")
-             .text(xTitle)
+             .text(xTitle.split(":")[0] + ": Descending")
              .attr("x",
-               ((!isRow) || tableCnt === 1 ? xWidth / 2 : tableNo * xWidth + chartWidth / 2)
+               ltx + maxX * cellWidth / 2
              )
              .attr("y",
-               (isRow || tableCnt === 1 ? yBase + (this._series && isRow ? 20 : 30) : ((tableNo === tableCnt - 1) ? yBase + (this._series && isRow ? 20 : 30) :
-                 tableNo * yHeight + chartHeight + (this._series && isRow ? 20 : 30)))
+               lty + chartHeight - this._marginNeighbor
              )
-             .attr("dy", ".5em")
+             .attr("dy", "1em")
+             .attr("font-size", "0.8em")
              .style("text-anchor", "middle");
           // sereis title if necessary
-          if (this._series && isRow) {
+          if (this._series) {
             var xSeriesTitle = this._svgGroup.append("text")
              .text(this._words[tableNo].title)
              .attr("x",
-               ((!isRow) || tableCnt === 1 ? xWidth / 2 : tableNo * xWidth + chartWidth / 2)
+               ltx + maxX * cellWidth / 2
              )
              .attr("y",
-               (isRow || tableCnt === 1 ? yBase + 35 : ((tableNo === tableCnt - 1) ? yBase + 35 :
-                 tableNo * yHeight + chartHeight + 35))
+               lty + chartHeight -this._marginNeighbor
              )
-             .attr("dy", ".5em")
+             .attr("dy", "2em")
              .attr("class", "series-title")
              .style("text-anchor", "middle");
           }
 
-       }
-
-      if (tableNo === 0 || (!this._row) || this._showRowY) {
+      if (tableNo % this._columnCnt === 0) {
           var yLabels = this._svgGroup.selectAll(".yLabel-" + tableNo)
             .data(this._y);
           yLabels.exit().remove();
@@ -436,37 +376,26 @@ class WaferMap extends EventEmitter {
             .attr("class", "series-title")
             .attr("opacity", d=> {return cellHeight >= 15 ? 1 : cellHeight >= 10 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;})
             .attr("dy", ".5em")
+            .attr("dx", "-0.5em")
             .attr("x",  function (d, i) {
-              return (isRow || tableCnt === 1 ? xWidth * tableNo : 0);
+              return (0);
             })
             .attr("y", function (d, i) {
               i = revertY(i, maxY);
-              return (isRow || tableCnt === 1 ? (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 : (i + 0.5) * cellHeight + (cellHeight * spaceCellCnt) / 2 + yHeight * tableNo);
+              return (i + 0.5) * cellHeight + lty;
             });
-
-         // xAxis title
+            // yAxis title
          var yAxisTitle = this._svgGroup.append("text")
-             .text(yTitle)
+             .text(yTitle.split(":")[0] + ": Ascending")
+             .attr("font-size", "0.8em")
              .attr("transform", "rotate(-90)")
-             .attr("x",isRow || tableCnt === 1 ? 0 - chartHeight/2 : 0 - chartHeight/2 - tableNo * yHeight)
-             .attr("y", isRow || tableCnt === 1 ? xWidth * tableNo - (this._series && (!isRow)? 25 : 35) : -(this._series && (!isRow)? 25 : 35))
+             .attr("x", 0 - lty - cellHeight * maxY / 2)
+             .attr("y", this._rowCnt > 1 ? -25 : -35)
              //.attr("dy", ".5em")
              .style("text-anchor", "middle");
-
-          // sereis title if necessary
-          if (this._series && (!isRow)) {
-            var ySeriesTitle = this._svgGroup.append("text")
-             .text(this._words[tableNo].title)
-             .attr("transform", "rotate(-90)")
-             .attr("x",isRow || tableCnt === 1 ? 0 - chartHeight/2 : 0 - chartHeight/2 - tableNo * yHeight)
-             .attr("y", isRow || tableCnt === 1 ? xWidth * tableNo - 40 : -40)
-             .attr("class", "series-title")
-             //.attr("dy", ".5em")
-             .style("text-anchor", "middle");
-          }
-
       }
-        var rectangles = this._svgGroup.selectAll("rect-" + tableNo)
+
+    var rectangles = this._svgGroup.selectAll("rect-" + tableNo)
           .data(this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows)
         rectangles.exit().remove();
         rectangles
@@ -476,11 +405,11 @@ class WaferMap extends EventEmitter {
         var map = rectangles.append("rect")
            .attr("x", function (d) {
              var x = revertX(d[0], maxX);
-             return (isRow || tableCnt === 1 ? x * cellWidth + (spaceCellCnt * cellWidth) / 2 + tableNo * xWidth : x * cellWidth + (spaceCellCnt * cellWidth / 2));
+             return (x * cellWidth + ltx);
            })
            .attr("y", function(d) {
             var y = revertY(d[1], maxY);
-            return (isRow || tableCnt === 1 ? y * cellHeight + (cellHeight * spaceCellCnt) / 2 : y * cellHeight + (cellHeight * spaceCellCnt) / 2 + tableNo * yHeight);
+            return (y * cellHeight + lty);
            })
 
           .attr("width", cellWidth)
@@ -506,31 +435,21 @@ class WaferMap extends EventEmitter {
             .style('fill', '#000000')
             .attr("x", function (d) {
                var x = revertX(d[0], maxX);
-               return (isRow || tableCnt === 1 ? x * cellWidth + (spaceCellCnt * cellWidth) / 2 + cellWidth / 2 + tableNo * xWidth : x * cellWidth + cellWidth / 2  + (spaceCellCnt * cellWidth / 2));
+               return (x + 0.5) * cellWidth + ltx;
             })
             .attr("y", function(d) {
               var y = revertY(d[1], maxY);
-              return (isRow || tableCnt === 1 ? y * cellHeight + cellHeight / 2 + (cellHeight * spaceCellCnt) / 2 : y * cellHeight + cellHeight / 2 + (cellHeight * spaceCellCnt) / 2 + tableNo * yHeight);
+              return (y + 0.5) * cellHeight + lty;
             });
           }
-
-          map.on("mouseover", function(d) {
-             d3.select(this).classed("cell-hover",true);
-           })
-           .on("mouseout", function(d) {
-             d3.select(this).classed("cell-hover",false);
-         });
-
 
           let seriesTitle = "";
           // add for tooltip
           if (isSeries) {
-            seriesTitle = this._words[tableNo].title.split(":")[1]
-              + ":"
-              + this._words[tableNo].title.split(":")[2];
+            seriesTitle = this._words[tableNo].title.split(":")[1];
           }
-          let _xTitle = xTitle;
-          let _yTitle = yTitle;
+          let _xTitle = xTitle.split(":")[0];
+          let _yTitle = yTitle.split(":")[0];
 
           let seriesTitleLength = seriesTitle.length;
           let maxTitleLength = seriesTitleLength > xTitleLength ?
@@ -550,46 +469,32 @@ class WaferMap extends EventEmitter {
             seriesTitle += '&nbsp;';
           }
           seriesTitle = isSeries ? ("<br/>"  + seriesTitle + '&nbsp;' + this._words[tableNo].title.split(":")[0]) : '';
-
-          if (this._addTooltip) {
-            map.on("mouseover", function(d) {
-              tooltip.html(metricTitle + '&nbsp;' + d[2]
+          const enableToolTip = this._addTooltip;
+          map.on("mouseover", function(d) {
+             d3.select(this).classed("cell-hover",true);
+                tooltip.html(metricTitle + '&nbsp;' + d[2]
                   + "<br/>"  + _xTitle + '&nbsp;' + d[0]
                   + "<br/>"  + _yTitle + '&nbsp;' + d[1]
                   + seriesTitle
                  )
-                 .style("left", (d3.event.offsetX + (d[0] > (maxX - 2) ? (0 -2 * cellWidth)  : d[0] < 2 ? 2 * cellWidth : cellWidth )) + "px")
-                 .style("top", (d3.event.offsetY + (d[1] > (maxY - 2) ? (0 - 2 * cellHeight)  : d[1] < 2 ? 2 * cellHeight : cellHeight )) + "px")
+                 .style("left", (d3.mouse(this)[0] + (d[0] < maxX / 2 ? -100 : 60)) + "px") 
+                 .style("top", (d3.mouse(this)[1] + (d[1] < maxY / 2 ? -100 : 60)) + "px")
 
-                 .style("opacity", 1)
-                // .style("background-color", 'black')
-                // .style("color",'white')
+                 .style("opacity", enableToolTip ? 1 : 0)
                 ;
-            })
-            .on("mouseout", function(d) {
-              tooltip.style("opacity", 0);
-            });
-          }
-
-
-          /**
-          .attr('transform', function (d) {
-            const horizontalCenter = x(d) + squareWidth / 2;
-            const verticalCenter = y(d) + squareHeight / 2;
-            return `rotate(${rotate},${horizontalCenter},${verticalCenter})`;
-          });
-          **/
-
-
+           })
+           .on("mouseout", function(d) {
+             d3.select(this).classed("cell-hover",false);
+             tooltip.style("opacity", 0);
+         });
         tableNo++;
       }
-
       // add the color legend
       var colors = [];
       const legendWidth = 20;
       const dis = (this._maxZ - this._minZ) / this._colorBucket;
       let colorNo = 0;
-      const legendHeight = chartHeight / (2 * (this._colorBucket + 1));
+      const legendHeight = chartHeight / ((this._colorBucket + 4));
       while (colorNo != this._colorBucket + 1) {
        // this._colors[colorNo] = num2e(dis * colorNo + this._minZ);
         const colorValue = dis * colorNo + this._minZ;
@@ -632,17 +537,6 @@ class WaferMap extends EventEmitter {
     });
   }
 
-  /**
-  _makeTextSizeMapper() {
-    const mapSizeToFontSize = D3_SCALING_FUNCTIONS[this._textScale]();
-    const range = this._words.length === 1 ? [this._maxFontSize, this._maxFontSize] : [this._minFontSize, this._maxFontSize];
-    mapSizeToFontSize.range(range);
-    if (this._words) {
-      mapSizeToFontSize.domain(d3.extent(this._words, getValue));
-    }
-    return mapSizeToFontSize;
-  }
-  **/
 
   _makeNewJob() {
     return {
