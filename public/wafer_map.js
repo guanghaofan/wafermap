@@ -58,6 +58,7 @@ class WaferMap extends EventEmitter {
     this._showLabel = false;
     this._reverseColor = false;
     this._addTooltip = false;
+    this._colorScale = 'linear';
 
     //DATA
     this._words = null;
@@ -84,6 +85,9 @@ class WaferMap extends EventEmitter {
     this._y = null;
     this._showGrid = false;
 
+    //color category
+    this._colorCategory = {};
+
     //LAYOUT
     this._rowCnt = 1;
     this._columnCnt = 1;
@@ -99,6 +103,7 @@ class WaferMap extends EventEmitter {
     this._addTooltip = options.addTooltip;
     this._colorSchema = options.colorSchema;
     this._reverseColor = options.reverseColor;
+    this._colorScale = options.colorScale;
   }
 
   setData(minZ, maxZ, x, y, data, row, series, colorCategory) {
@@ -111,7 +116,7 @@ class WaferMap extends EventEmitter {
     this._words = data;
     this._row = row;
     this._series =series;
-    this._colorBucket = colorCategory === 2 ? 1 : 9;
+    this._colorBucket = (colorCategory === 2 ? 1 : 9);
     //this._xTitle = xTitle;
     //this._yTitle = yTitle;
   }
@@ -314,6 +319,12 @@ class WaferMap extends EventEmitter {
 		}
   }
 
+  var isOrdinal = false;
+  if (this._colorScale === 'ordinal') {
+    colorScale = d3.scale.category20c();
+    isOrdinal = true;
+  }
+  var colorCategory = [];
 
   while (tableNo !== tableCnt) {
     let rowNo = Math.floor(tableNo / this._columnCnt);
@@ -339,7 +350,7 @@ class WaferMap extends EventEmitter {
               return lty + (maxY + 1 + spaceCellCnt / 2) * cellHeight;
            });
          // xAxis title
-
+         /*
          var xAxisTitle = this._svgGroup.append("text")
              .text(xTitle.split(":")[0] + ": Descending")
              .attr("x",
@@ -351,6 +362,8 @@ class WaferMap extends EventEmitter {
              .attr("dy", "1em")
              .attr("font-size", "0.8em")
              .style("text-anchor", "middle");
+          */
+
           // sereis title if necessary
           if (this._series) {
             var xSeriesTitle = this._svgGroup.append("text")
@@ -361,7 +374,7 @@ class WaferMap extends EventEmitter {
              .attr("y",
                lty + chartHeight -this._marginNeighbor
              )
-             .attr("dy", "2em")
+             .attr("dy", "1em")
              .attr("class", "series-title")
              .style("text-anchor", "middle");
           }
@@ -385,6 +398,7 @@ class WaferMap extends EventEmitter {
               return (i + 0.5) * cellHeight + lty;
             });
             // yAxis title
+         /**
          var yAxisTitle = this._svgGroup.append("text")
              .text(yTitle.split(":")[0] + ": Ascending")
              .attr("font-size", "0.8em")
@@ -393,6 +407,7 @@ class WaferMap extends EventEmitter {
              .attr("y", this._rowCnt > 1 ? -25 : -35)
              //.attr("dy", ".5em")
              .style("text-anchor", "middle");
+         */
       }
 
     var rectangles = this._svgGroup.selectAll("rect-" + tableNo)
@@ -415,7 +430,8 @@ class WaferMap extends EventEmitter {
           .attr("width", cellWidth)
           .attr("height", cellHeight)
           .attr('fill', function(d) {
-            return colorScale(reverseColor ? 1 -  colorDomain(d[2]) : colorDomain(d[2]));
+            var colorNo = getOrdinalColor(d[2], colorCategory);
+            return isOrdinal ? colorScale(colorNo) : colorScale(reverseColor ? 1 -  colorDomain(d[2]) : colorDomain(d[2]));
           });
 
           if (this._showLabel) {
@@ -477,7 +493,7 @@ class WaferMap extends EventEmitter {
                   + "<br/>"  + _yTitle + '&nbsp;' + d[1]
                   + seriesTitle
                  )
-                 .style("left", (d3.mouse(this)[0] + (d[0] < maxX / 2 ? -100 : 60)) + "px") 
+                 .style("left", (d3.mouse(this)[0] + (d[0] < maxX / 2 ? -100 : 60)) + "px")
                  .style("top", (d3.mouse(this)[1] + (d[1] < maxY / 2 ? -100 : 60)) + "px")
 
                  .style("opacity", enableToolTip ? 1 : 0)
@@ -489,21 +505,31 @@ class WaferMap extends EventEmitter {
          });
         tableNo++;
       }
+      // sort the color lable if needed
+      if (isOrdinal) {
+        colorCategory.sort(function(a, b){
+          return a - b;
+        });
+      }
+
       // add the color legend
       var colors = [];
       const legendWidth = 20;
-      const dis = (this._maxZ - this._minZ) / this._colorBucket;
+      var colorBucket = isOrdinal ? colorCategory.length - 1 : this._colorBucket;
+      const dis = (this._maxZ - this._minZ) / colorBucket;
       let colorNo = 0;
-      const legendHeight = chartHeight / ((this._colorBucket + 4));
-      while (colorNo != this._colorBucket + 1) {
+      const legendHeight = chartHeight / ((colorBucket + 4));
+      while (colorNo != colorBucket + 1) {
        // this._colors[colorNo] = num2e(dis * colorNo + this._minZ);
         const colorValue = dis * colorNo + this._minZ;
-        colors.push(num2e(colorNo === this._colorBucket ? this._maxZ : colorValue));
+
+        colors.push(num2e(colorNo === colorBucket ? this._maxZ : colorValue));
+
         colorNo++;
       }
 
 
-      var legendLabels = this._svgGroup.selectAll("legendLabel").data(colors);
+      var legendLabels = this._svgGroup.selectAll("legendLabel").data(isOrdinal ? colorCategory : colors);
       legendLabels.exit().remove();
       legendLabels.enter().append("text")
         .text(function (d) { return d; })
@@ -511,6 +537,7 @@ class WaferMap extends EventEmitter {
         .attr("y", function (d, i) { return (i + 1.5) * legendHeight; })
         .attr("dy", "0.5em")
         .style("text-anchor", "end");
+
       var legendTitle = this._svgGroup.append("text")
         .text(this._series ? this._words[0].tables["0"].columns[2].title : this._words[0].columns[2].title)
         .attr("x", this._element.offsetWidth - this._marginLeft - 10)
@@ -528,8 +555,8 @@ class WaferMap extends EventEmitter {
         .attr("y", function (d, i) { return (i +1) * legendHeight; })
         .attr("width", legendWidth)
         .attr("height", legendHeight)
-        .style("fill", function(d){
-          return colorScale(reverseColor ? 1- colorDomain(d) : colorDomain(d));
+        .style("fill", function(d, i){
+          return isOrdinal ?  colorScale(i) : colorScale(reverseColor ? 1- colorDomain(d) : colorDomain(d));
         });
      this._DOMisUpdating = false;
      resolve(true);
@@ -663,6 +690,19 @@ function getColorValue(reverse) {
   if (!reverse) {
     return
   }
+}
+
+function getOrdinalColor(value, colorCategory){
+  var index = colorCategory.indexOf(value);
+  if (index === -1) {
+    colorCategory[colorCategory.length] = value;
+    return colorCategory.length - 1;
+  }
+  else {
+    return index;
+  }
+
+
 }
 
 function revertX(x, maxX){
