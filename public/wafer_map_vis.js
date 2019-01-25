@@ -22,6 +22,7 @@ VisTypesRegistryProvider.register(function (Private) {
     visConfig: {
       defaults: {
         colorSchema: 'Green-Red',
+        colorScale: 'linear',
         reverseColor: false,
         addTooltip: true,
         showLabel: true
@@ -34,6 +35,8 @@ VisTypesRegistryProvider.register(function (Private) {
       collections: {
         colorSchemas: ['Green-Red', 'Green-Blue', 'Green-Yellow' , 'Green-Orange', 'Yellow-Pink', 'LightGreen-SkyBlue', 'DarkGreen-Brown', 'Green-Red-Yellow',
                        'Green-Yellow-Blue', 'Green-Yellow-Red', 'Green-Yellow-Pink', 'Green-Red-Blue', 'Green-Pink-Yellow'],
+                       colorScales: ['linear', 'ordinal'],
+
       },
       optionsTemplate: '<wafermap-vis-params></wafermap-vis-params>',
       schemas: new Schemas([

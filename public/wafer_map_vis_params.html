@@ -21,6 +21,20 @@
       ></select>
     </div>
   </div>
+  
+  <div class="kuiSideBarFormRow">
+    <label class="kuiSideBarFormRow__label" for="colorScale">
+      Color Scale
+    </label>
+    <div class="kuiSideBarFormRow__control">
+      <select
+        id="colorScale"
+        class="form-control"
+        ng-model="editorState.params.colorScale"
+        ng-options="mode for mode in config.collections.colorScales"
+      ></select>
+    </div>
+  </div>
 
   <div class="kuiSideBarFormRow">
     <label class="kuiSideBarFormRow__label" for="reverseColor">
