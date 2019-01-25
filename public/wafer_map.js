@@ -273,6 +273,23 @@ class WaferMap extends EventEmitter {
 		this._rowCnt = 1;
 	}
 	else {
+        //here add code to sort the table by number, need to check the split by bucket here
+        var ascend = true;
+        var isWafer = true;
+        if (this._words[0].title.indexOf('Asc') === -1) {
+          ascend = false;
+        }
+        if (this._words[0].title.indexOf('WaferNumber') === -1) {
+          isWafer = false;
+        }
+        if (this._words[0].aggConfig._aggs[1].params.orderBy == '_key') {
+          this._words.sort(function (a, b){
+            var numbera = + a.key;
+            var numberb = + b.key;
+            return ascend ? numbera > numberb : numberb > numbera;
+          });
+        }
+
 	      let colBasedTotalCnt = 0;
 	      let columnCnt = 0;
 	      let rowCnt = 0;
@@ -320,8 +337,11 @@ class WaferMap extends EventEmitter {
   }
 
   var isOrdinal = false;
+  var colorScale20 = d3.scale.category20();
+  var colorScale20b = d3.scale.category20b();
+  var colorScale20c = d3.scale.category20c();
   if (this._colorScale === 'ordinal') {
-    colorScale = d3.scale.category20c();
+    colorScale = colorScale20;
     isOrdinal = true;
   }
   var colorCategory = [];
@@ -430,7 +450,23 @@ class WaferMap extends EventEmitter {
           .attr("width", cellWidth)
           .attr("height", cellHeight)
           .attr('fill', function(d) {
-            var colorNo = getOrdinalColor(d[2], colorCategory);
+            var colorNo = 0;
+            if (isOrdinal) {
+              colorNo = getOrdinalColor(d[2], colorCategory);
+              colorScale = d3.scale.category20();
+              if (colorNo <= 19) {
+                colorScale = colorScale20;
+              }
+              else if (colorNo <= 39) {
+                colorScale = colorScale20b;
+                colorNo -= 20;
+              }
+              else {
+                colorScale = colorScale20c;
+                colorNo -= 40;
+              }
+            }
+
             return isOrdinal ? colorScale(colorNo) : colorScale(reverseColor ? 1 -  colorDomain(d[2]) : colorDomain(d[2]));
           });
 
@@ -507,9 +543,9 @@ class WaferMap extends EventEmitter {
       }
       // sort the color lable if needed
       if (isOrdinal) {
-        colorCategory.sort(function(a, b){
-          return a - b;
-        });
+      //  colorCategory.sort(function(a, b){
+      //    return a - b;
+      //  });
       }
 
       // add the color legend
@@ -518,7 +554,7 @@ class WaferMap extends EventEmitter {
       var colorBucket = isOrdinal ? colorCategory.length - 1 : this._colorBucket;
       const dis = (this._maxZ - this._minZ) / colorBucket;
       let colorNo = 0;
-      const legendHeight = chartHeight / ((colorBucket + 4));
+      const legendHeight = height / ((colorBucket + 4));
       while (colorNo != colorBucket + 1) {
        // this._colors[colorNo] = num2e(dis * colorNo + this._minZ);
         const colorValue = dis * colorNo + this._minZ;
@@ -556,6 +592,20 @@ class WaferMap extends EventEmitter {
         .attr("width", legendWidth)
         .attr("height", legendHeight)
         .style("fill", function(d, i){
+          if (isOrdinal) {
+            if (i <= 19) {
+              colorScale = colorScale20;
+            }
+            else if (i <= 39) {
+              colorScale = colorScale20b;
+              i -= 20;
+            }
+            else {
+              colorScale = colorScale20c;
+              i -= 40;
+            }
+          }
+
           return isOrdinal ?  colorScale(i) : colorScale(reverseColor ? 1- colorDomain(d) : colorDomain(d));
         });
      this._DOMisUpdating = false;
