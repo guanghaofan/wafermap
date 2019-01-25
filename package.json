@@ -1,6 +1,6 @@
 {
   "name": "wafermap",
-  "version": "0.0.0",
+  "version": "6.4.4.1",
   "description": "wafer map",
   "main": "index.js",
   "kibana": {
