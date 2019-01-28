@@ -324,6 +324,13 @@ class WaferMap extends EventEmitter {
 			      }
 		      }
 		    }
+      if(tableCnt < this._columnCnt) {
+          this._columnCnt = tableCnt;
+      }
+      if(tableCnt < this._rowCnt) {
+        this._rowCnt = tableCnt;
+      }
+
   }
   chartHeight = height / this._rowCnt;
   chartWidth = width / this._columnCnt;
