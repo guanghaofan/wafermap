@@ -591,7 +591,8 @@ class WaferMap extends EventEmitter {
           }
         return d;
         })
-        .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 10)
+        .attr("class", "series-title")
+        .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 12)
         .attr("y", function (d, i) { return (i + 1.5) * legendHeight; })
         .attr("dy", "0.5em")
         .style("text-anchor", "end");
