@@ -2,6 +2,7 @@ import d3 from 'd3';
 //import d3Tip from "d3-tip"
 //import { seedColors } from 'ui/vis/components/color/seed_colors';
 import { EventEmitter } from 'events';
+import BinColors from './BinColors';
 
 /**
 const ORIENTATIONS = {
@@ -41,7 +42,6 @@ class WaferMap extends EventEmitter {
     this._tooltip = d3.select(this._element).append("div")
       .attr("class", "tooltip")
       .style("opacity", 0);
-
 
 
 
@@ -337,12 +337,19 @@ class WaferMap extends EventEmitter {
   }
 
   var isOrdinal = false;
+  var isCustomziedBinning = false;
+
   var colorScale20 = d3.scale.category20();
   var colorScale20b = d3.scale.category20b();
   var colorScale20c = d3.scale.category20c();
-  if (this._colorScale === 'ordinal') {
+  var isBinning = metricTitle.indexOf('.num') === -1 ? false : true;
+
+  if (this._colorScale === 'ordinal' && isBinning) {
     colorScale = colorScale20;
     isOrdinal = true;
+  }
+  else if (this._colorScale === 'customzied binning' && isBinning) {
+    isCustomziedBinning = true;
   }
   var colorCategory = [];
 
@@ -467,8 +474,15 @@ class WaferMap extends EventEmitter {
               }
             }
 
-            return isOrdinal ? colorScale(colorNo) : colorScale(reverseColor ? 1 -  colorDomain(d[2]) : colorDomain(d[2]));
+            if (isCustomziedBinning) {
+              colorNo = getOrdinalColor(d[2], colorCategory);
+              return BinColors.getColor(d[2]);
+            }
+            else {
+              return isOrdinal ? colorScale(colorNo) : colorScale(reverseColor ? 1 -  colorDomain(d[2]) : colorDomain(d[2]));
+            }
           });
+
 
           if (this._showLabel) {
             rectangles.append('text')
@@ -542,33 +556,41 @@ class WaferMap extends EventEmitter {
         tableNo++;
       }
       // sort the color lable if needed
-      if (isOrdinal) {
-      //  colorCategory.sort(function(a, b){
-      //    return a - b;
-      //  });
+      if (isOrdinal || isCustomziedBinning) {
+        colorCategory.sort(function(a, b){
+          return a[1] - b[1];
+        });
       }
 
       // add the color legend
       var colors = [];
       const legendWidth = 20;
-      var colorBucket = isOrdinal ? colorCategory.length - 1 : this._colorBucket;
+      var colorBucket = (isOrdinal || isCustomziedBinning) ? colorCategory.length - 1 : this._colorBucket;
       const dis = (this._maxZ - this._minZ) / colorBucket;
       let colorNo = 0;
       const legendHeight = height / ((colorBucket + 4));
       while (colorNo != colorBucket + 1) {
        // this._colors[colorNo] = num2e(dis * colorNo + this._minZ);
-        const colorValue = dis * colorNo + this._minZ;
+        if (isOrdinal || isCustomziedBinning) {
 
-        colors.push(num2e(colorNo === colorBucket ? this._maxZ : colorValue));
-
+        }
+        else {
+          const colorValue = dis * colorNo + this._minZ;
+          colors.push(num2e(colorNo === colorBucket ? this._maxZ : colorValue));
+        }
         colorNo++;
       }
 
 
-      var legendLabels = this._svgGroup.selectAll("legendLabel").data(isOrdinal ? colorCategory : colors);
+      var legendLabels = this._svgGroup.selectAll("legendLabel").data(isOrdinal || isCustomziedBinning ? colorCategory : colors);
       legendLabels.exit().remove();
       legendLabels.enter().append("text")
-        .text(function (d) { return d; })
+        .text(function (d) {
+          if (isOrdinal || isCustomziedBinning) {
+            return d[1];
+          }
+        return d;
+        })
         .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 10)
         .attr("y", function (d, i) { return (i + 1.5) * legendHeight; })
         .attr("dy", "0.5em")
@@ -581,7 +603,7 @@ class WaferMap extends EventEmitter {
         .style("text-anchor", "end");
 
 
-      var legendRect = this._svgGroup.selectAll("legendRect").data(colors);
+      var legendRect = this._svgGroup.selectAll("legendRect").data(isOrdinal || isCustomziedBinning ? colorCategory : colors);
       legendRect.exit().remove();
 
       legendRect
@@ -591,8 +613,9 @@ class WaferMap extends EventEmitter {
         .attr("y", function (d, i) { return (i +1) * legendHeight; })
         .attr("width", legendWidth)
         .attr("height", legendHeight)
-        .style("fill", function(d, i){
+        .style("fill", function(d){
           if (isOrdinal) {
+            var i = d[0];
             if (i <= 19) {
               colorScale = colorScale20;
             }
@@ -604,6 +627,9 @@ class WaferMap extends EventEmitter {
               colorScale = colorScale20c;
               i -= 40;
             }
+          }
+          else if (isCustomziedBinning) {
+            return BinColors.getColor(d[1]);
           }
 
           return isOrdinal ?  colorScale(i) : colorScale(reverseColor ? 1- colorDomain(d) : colorDomain(d));
@@ -743,13 +769,16 @@ function getColorValue(reverse) {
 }
 
 function getOrdinalColor(value, colorCategory){
-  var index = colorCategory.indexOf(value);
-  if (index === -1) {
-    colorCategory[colorCategory.length] = value;
-    return colorCategory.length - 1;
+  var index = colorCategory.find(function(a){
+    return a[1] === value;
+  });
+  if (index == null) {
+    index = colorCategory.length;
+    colorCategory[index] = [index, value];
+    return index;
   }
   else {
-    return index;
+    return index[0];
   }
 
 
