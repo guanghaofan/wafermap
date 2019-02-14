@@ -25,7 +25,8 @@ VisTypesRegistryProvider.register(function (Private) {
         colorScale: 'customzied binning',
         reverseColor: false,
         addTooltip: true,
-        showLabel: true
+        showLabel: true,
+        defaultAxisOrientation: true
       }
     },
     requiresUpdateStatus: [Status.PARAMS, Status.RESIZE, Status.DATA],

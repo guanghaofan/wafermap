@@ -91,6 +91,9 @@ class WaferMap extends EventEmitter {
     //LAYOUT
     this._rowCnt = 1;
     this._columnCnt = 1;
+
+    // defaultAxisOrientation
+    this._defaultAxisOrientation = true;
   }
 
   setOptions(options, paramsOnly) {
@@ -104,6 +107,7 @@ class WaferMap extends EventEmitter {
     this._colorSchema = options.colorSchema;
     this._reverseColor = options.reverseColor;
     this._colorScale = options.colorScale;
+    this._defaultAxisOrientation = options.defaultAxisOrientation;
   }
 
   setData(minZ, maxZ, x, y, data, row, series, colorCategory) {
@@ -248,11 +252,14 @@ class WaferMap extends EventEmitter {
       var colorDomain = d3.scale.linear().domain([this._minZ,this._maxZ]).range([0,1]);
 
       var tooltip = this._tooltip;
+      var defaultAxisOrientation = this._defaultAxisOrientation;
 
       let tableNo = 0;
       let metricTitle = this._series ? this._words[tableNo].tables["0"].columns[2].title : this._words[tableNo].columns[2].title;
       const xTitle = this._series ? this._words[tableNo].tables["0"].columns[0].title : this._words[tableNo].columns[0].title;
       const yTitle = this._series ? this._words[tableNo].tables["0"].columns[1].title : this._words[tableNo].columns[1].title;
+      const xAxisOrientationDefault = (xTitle.indexOf('Asc') === -1) ? false : true;
+      const yAxisOrientationDefault = (yTitle.indexOf('Asc') === -1) ? true : false;
 
       let xTitleLength = xTitle.split(":")[0].length;
       let yTitleLength = yTitle.split(":")[0].length;
@@ -377,7 +384,7 @@ class WaferMap extends EventEmitter {
             .attr("class", "series-title")
             .attr("opacity", d=> {return cellWidth >= 15 ? 1 : cellWidth >= 10 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;})
             .attr("x", function (d, i) {
-              i =  revertX(i, maxX);
+              i =  revertX(i, maxX, defaultAxisOrientation, xAxisOrientationDefault);
               return (i + 0.5) * cellWidth + ltx;
             })
             .attr("y", function (d, i) {
@@ -428,7 +435,7 @@ class WaferMap extends EventEmitter {
               return (0);
             })
             .attr("y", function (d, i) {
-              i = revertY(i, maxY);
+              i = revertY(i, maxY, defaultAxisOrientation, yAxisOrientationDefault);
               return (i + 0.5) * cellHeight + lty;
             });
             // yAxis title
@@ -453,11 +460,11 @@ class WaferMap extends EventEmitter {
 
         var map = rectangles.append("rect")
            .attr("x", function (d) {
-             var x = revertX(d[0], maxX);
+             var x = revertX(d[0], maxX, defaultAxisOrientation, xAxisOrientationDefault);
              return (x * cellWidth + ltx);
            })
            .attr("y", function(d) {
-            var y = revertY(d[1], maxY);
+            var y = revertY(d[1], maxY, defaultAxisOrientation, yAxisOrientationDefault);
             return (y * cellHeight + lty);
            })
 
@@ -507,11 +514,11 @@ class WaferMap extends EventEmitter {
             .style('text-anchor', 'middle')
             .style('fill', '#000000')
             .attr("x", function (d) {
-               var x = revertX(d[0], maxX);
+               var x = revertX(d[0], maxX, defaultAxisOrientation, xAxisOrientationDefault);
                return (x + 0.5) * cellWidth + ltx;
             })
             .attr("y", function(d) {
-              var y = revertY(d[1], maxY);
+              var y = revertY(d[1], maxY, defaultAxisOrientation, yAxisOrientationDefault);
               return (y + 0.5) * cellHeight + lty;
             });
           }
@@ -792,11 +799,17 @@ function getOrdinalColor(value, colorCategory){
 
 }
 
-function revertX(x, maxX){
+function revertX(x, maxX, defaultAxisOrientation, xAxisOrientationDefault){
+  if (defaultAxisOrientation || xAxisOrientationDefault) {
+    return x;
+  }
   return maxX - x;
 }
 
-function revertY(y, maxY){
+function revertY(y, maxY, defaultAxisOrientation, yAxisOrientationDefault){
+  if (defaultAxisOrientation || yAxisOrientationDefault) {
+    return y;
+  }
   return maxY - y;
 }
 
