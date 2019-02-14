@@ -3,6 +3,7 @@ import d3 from 'd3';
 //import { seedColors } from 'ui/vis/components/color/seed_colors';
 import { EventEmitter } from 'events';
 import BinColors from './BinColors';
+import chrome from 'ui/chrome';
 
 /**
 const ORIENTATIONS = {
@@ -94,6 +95,8 @@ class WaferMap extends EventEmitter {
 
     // defaultAxisOrientation
     this._defaultAxisOrientation = true;
+    this._defaultXAxisOri = chrome.getInjected('defaultXAxisOrientation', false);
+    this._defaultYAxisOri = chrome.getInjected('defaultYAxisOrientation', false);
   }
 
   setOptions(options, paramsOnly) {
@@ -258,6 +261,9 @@ class WaferMap extends EventEmitter {
       let metricTitle = this._series ? this._words[tableNo].tables["0"].columns[2].title : this._words[tableNo].columns[2].title;
       const xTitle = this._series ? this._words[tableNo].tables["0"].columns[0].title : this._words[tableNo].columns[0].title;
       const yTitle = this._series ? this._words[tableNo].tables["0"].columns[1].title : this._words[tableNo].columns[1].title;
+      const xIsAsc = (this._defaultXAxisOri === 'asc' ? true : false);
+      const yIsDes = (this._defaultYAxisOri === 'des' ? true : false);
+
       const xAxisOrientationDefault = (xTitle.indexOf('Asc') === -1) ? false : true;
       const yAxisOrientationDefault = (yTitle.indexOf('Asc') === -1) ? true : false;
 
@@ -384,7 +390,7 @@ class WaferMap extends EventEmitter {
             .attr("class", "series-title")
             .attr("opacity", d=> {return cellWidth >= 15 ? 1 : cellWidth >= 10 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;})
             .attr("x", function (d, i) {
-              i =  revertX(i, maxX, defaultAxisOrientation, xAxisOrientationDefault);
+              i =  revertX(i, maxX, defaultAxisOrientation, xAxisOrientationDefault, xIsAsc);
               return (i + 0.5) * cellWidth + ltx;
             })
             .attr("y", function (d, i) {
@@ -435,7 +441,7 @@ class WaferMap extends EventEmitter {
               return (0);
             })
             .attr("y", function (d, i) {
-              i = revertY(i, maxY, defaultAxisOrientation, yAxisOrientationDefault);
+              i = revertY(i, maxY, defaultAxisOrientation, yAxisOrientationDefault, yIsDes);
               return (i + 0.5) * cellHeight + lty;
             });
             // yAxis title
@@ -460,11 +466,11 @@ class WaferMap extends EventEmitter {
 
         var map = rectangles.append("rect")
            .attr("x", function (d) {
-             var x = revertX(d[0], maxX, defaultAxisOrientation, xAxisOrientationDefault);
+             var x = revertX(d[0], maxX, defaultAxisOrientation, xAxisOrientationDefault, xIsAsc);
              return (x * cellWidth + ltx);
            })
            .attr("y", function(d) {
-            var y = revertY(d[1], maxY, defaultAxisOrientation, yAxisOrientationDefault);
+            var y = revertY(d[1], maxY, defaultAxisOrientation, yAxisOrientationDefault, yIsDes);
             return (y * cellHeight + lty);
            })
 
@@ -514,11 +520,11 @@ class WaferMap extends EventEmitter {
             .style('text-anchor', 'middle')
             .style('fill', '#000000')
             .attr("x", function (d) {
-               var x = revertX(d[0], maxX, defaultAxisOrientation, xAxisOrientationDefault);
+               var x = revertX(d[0], maxX, defaultAxisOrientation, xAxisOrientationDefault, xIsAsc);
                return (x + 0.5) * cellWidth + ltx;
             })
             .attr("y", function(d) {
-              var y = revertY(d[1], maxY, defaultAxisOrientation, yAxisOrientationDefault);
+              var y = revertY(d[1], maxY, defaultAxisOrientation, yAxisOrientationDefault, yIsDes);
               return (y + 0.5) * cellHeight + lty;
             });
           }
@@ -799,18 +805,35 @@ function getOrdinalColor(value, colorCategory){
 
 }
 
-function revertX(x, maxX, defaultAxisOrientation, xAxisOrientationDefault){
-  if (defaultAxisOrientation || xAxisOrientationDefault) {
+function revertX(x, maxX, defaultAxisOrientation, xAxisOrientationDefault, xIsAsc){
+  if (xIsAsc) {
+    if (defaultAxisOrientation || xAxisOrientationDefault) {
+      return x;
+    }
+    else
+      return maxX - x;
+  }
+  else {
+    if (defaultAxisOrientation || xAxisOrientationDefault) {
+      return maxX - x;
+    }
     return x;
   }
-  return maxX - x;
 }
 
-function revertY(y, maxY, defaultAxisOrientation, yAxisOrientationDefault){
-  if (defaultAxisOrientation || yAxisOrientationDefault) {
+function revertY(y, maxY, defaultAxisOrientation, yAxisOrientationDefault, yIsDes){
+  if (yIsDes) {
+    if (defaultAxisOrientation || yAxisOrientationDefault) {
+      return y;
+    }
+    return maxY - y;
+  }
+  else {
+    if (defaultAxisOrientation || yAxisOrientationDefault) {
+      return maxY - y;
+    }
     return y;
   }
-  return maxY - y;
 }
 
 
