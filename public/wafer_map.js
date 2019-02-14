@@ -97,6 +97,10 @@ class WaferMap extends EventEmitter {
     this._defaultAxisOrientation = true;
     this._defaultXAxisOri = chrome.getInjected('defaultXAxisOrientation', false);
     this._defaultYAxisOri = chrome.getInjected('defaultYAxisOrientation', false);
+
+    // default hard bin and soft bin name to support ordinal color
+    this._defaultSBinName = chrome.getInjected('defaultSoftBinName', false);
+    this._defaultHBinName = chrome.getInjected('defaultHardBinName', false);
   }
 
   setOptions(options, paramsOnly) {
@@ -362,7 +366,7 @@ class WaferMap extends EventEmitter {
   var colorScale20 = d3.scale.category20();
   var colorScale20b = d3.scale.category20b();
   var colorScale20c = d3.scale.category20c();
-  var isBinning = metricTitle.indexOf('.num') === -1 ? false : true;
+  var isBinning = (metricTitle.indexOf(this._defaultSBinName) === -1 && metricTitle.indexOf(this._defaultHBinName) === -1) ? false : true;
 
   if (this._colorScale === 'ordinal' && isBinning) {
     colorScale = colorScale20;
