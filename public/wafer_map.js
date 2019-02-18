@@ -299,7 +299,7 @@ class WaferMap extends EventEmitter {
         if (this._words[0].title.indexOf('WaferNumber') === -1) {
           isWafer = false;
         }
-        if (this._words[0].aggConfig._aggs[1].params.orderBy == '_key') {
+        if (this._words[0].aggConfig.params.orderBy == '_key') {
           this._words.sort(function (a, b){
             var numbera = + a.key;
             var numberb = + b.key;
