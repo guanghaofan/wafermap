@@ -11,6 +11,9 @@ export default function (kibana) {
           defaultYAxisOrientation: config.get('wafermap.defaultYAxisOrientation'),
           defaultSoftBinName: config.get('wafermap.defaultSoftBinName'),
           defaultHardBinName: config.get('wafermap.defaultHardBinName'),
+
+          defaultHardBinColor: config.get('wafermap.defaultHardBinColor'),
+          defaultSoftBinColor: config.get('wafermap.defaultSoftBinColor'),
         };
       },
     },
@@ -22,6 +25,8 @@ export default function (kibana) {
         defaultYAxisOrientation: Joi.string().default('des'),
         defaultSoftBinName: Joi.string().default('Bin'),
         defaultHardBinName: Joi.string().default('Bin'),
+        defaultHardBinColor: Joi.string().default("1"),
+        defaultSoftBinColor: Joi.string().default("1"),
       }).default();
     },
 

@@ -101,6 +101,37 @@ class WaferMap extends EventEmitter {
     // default hard bin and soft bin name to support ordinal color
     this._defaultSBinName = chrome.getInjected('defaultSoftBinName', false);
     this._defaultHBinName = chrome.getInjected('defaultHardBinName', false);
+
+    // default hard bin and soft bin customized color settings in kibana.yml
+    // format:
+
+    this._defaultSBinColorStr = chrome.getInjected('defaultSoftBinColor', false);
+    this._defaultHBinColorStr = chrome.getInjected('defaultHardBinColor', false);
+
+    this._defaultSBColors = new Map();
+    this._defaultHBColors = new Map();
+
+    if (this._defaultSBinColorStr.length > 3) {
+      var no = 0;
+      var tmpColors = this._defaultSBinColorStr.split(":");
+      for(;no != tmpColors.length; no ++){
+        var binColor = tmpColors[no];
+        this._defaultSBColors.set(binColor.split("-")[0], binColor.split("-")[1]);
+      }
+    }
+
+    if (this._defaultHBinColorStr.length > 3) {
+      var no = 0;
+      var tmpColors = this._defaultHBinColorStr.split(":");
+      for(;no != tmpColors.length; no ++){
+        var binColor = tmpColors[no];
+        this._defaultHBColors.set(binColor.split("-")[0], binColor.split("-")[1]);
+      }
+    }
+
+
+
+
   }
 
   setOptions(options, paramsOnly) {
@@ -366,14 +397,26 @@ class WaferMap extends EventEmitter {
   var colorScale20 = d3.scale.category20();
   var colorScale20b = d3.scale.category20b();
   var colorScale20c = d3.scale.category20c();
-  var isBinning = (metricTitle.indexOf(this._defaultSBinName) === -1 && metricTitle.indexOf(this._defaultHBinName) === -1) ? false : true;
+
+  var isSoftBining = metricTitle.indexOf(this._defaultSBinName) === -1 ? false : true;
+  var isHardBining = metricTitle.indexOf(this._defaultHBinName) === -1 ? false : true;
+  var isBinning = (isSoftBining || isHardBining);
+
+  var defaultSBColors = this._defaultSBColors;
+  var defaultHBColors = this._defaultHBColors;
 
   if (this._colorScale === 'ordinal' && isBinning) {
     colorScale = colorScale20;
     isOrdinal = true;
   }
   else if (this._colorScale === 'customzied binning' && isBinning) {
-    isCustomziedBinning = true;
+    isCustomziedBinning = (isSoftBining && defaultSBColors.size > 0) || (isHardBining && defaultHBColors.size > 0);
+
+
+    if (!isCustomziedBinning) {
+      isSoftBining = false;
+      isHardBining = false;
+    }
   }
   var colorCategory = [];
 
@@ -500,7 +543,11 @@ class WaferMap extends EventEmitter {
 
             if (isCustomziedBinning) {
               colorNo = getOrdinalColor(d[2], colorCategory);
-              return BinColors.getColor(d[2]);
+              var binColor = isSoftBining ? defaultSBColors.get(d[2]) : defaultHBColors.get(d[2]);
+              if (binColor == null) {
+                return 'RGB(0,0,0)';
+              }
+              return binColor;
             }
             else {
               return isOrdinal ? colorScale(colorNo) : colorScale(reverseColor ? 1 -  colorDomain(d[2]) : colorDomain(d[2]));
@@ -654,7 +701,11 @@ class WaferMap extends EventEmitter {
             }
           }
           else if (isCustomziedBinning) {
-            return BinColors.getColor(d[1]);
+            var binColor = isSoftBining ? defaultSBColors.get(d[1]) : defaultHBColors.get(d[1]);
+              if (binColor == null) {
+                return 'RGB(0,0,0)';
+              }
+              return binColor;
           }
 
           return isOrdinal ?  colorScale(i) : colorScale(reverseColor ? 1- colorDomain(d) : colorDomain(d));
