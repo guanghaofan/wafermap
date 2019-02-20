@@ -94,9 +94,9 @@ export class WaferMapVisualization {
         if (status.data) {
           this._generateData(data);
         }
-        //if(this._validateCellSize()) {
+        if (!this._isEmptyData) {
           this._waferMap.upateSVG();
-        //}
+        }
       }
     }
 
@@ -227,6 +227,10 @@ export class WaferMapVisualization {
       if (this._tableCnt > 1 || this._series) {
         var temp  = response.tables[tableNo].tables["0"];
         chartData = temp.rows;
+        if (chartData.length ===0 || temp.columns.length ===0) {
+          this._isEmptyData = true;
+          return;
+        }
         var metricAgg = this._vis.aggs.find(aggConfig=> aggConfig.id === temp.columns[2].aggConfig.id);
         this._fieldFormat = metricAgg.type && metricAgg.type.getFormat(metricAgg);
         if (!this._fieldFormat) {
@@ -238,6 +242,11 @@ export class WaferMapVisualization {
       }
       else {
         chartData = response.tables[tableNo].rows;
+        if (chartData.length === 0 || response.tables[tableNo].columns.length ===0) {
+          // there's no x or no y data
+          this._isEmptyData = true;
+          return;
+        }
         var metricAgg = this._vis.aggs.find(aggConfig=> aggConfig.id === response.tables[tableNo].columns[2].aggConfig.id);
         this._fieldFormat = metricAgg.type && metricAgg.type.getFormat(metricAgg);
         if (!this._fieldFormat) {

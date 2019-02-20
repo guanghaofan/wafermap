@@ -1,7 +1,7 @@
 import './wafer_map.less';
 import './wafer_map_vis_params';
 import { VisFactoryProvider } from 'ui/vis/vis_factory';
-import { CATEGORY } from 'ui/vis/vis_category';
+//import { CATEGORY } from 'ui/vis/vis_category';
 import { Schemas } from 'ui/vis/editors/default/schemas';
 import { WaferMapVisualization } from './wafer_map_visualization';
 import { VisTypesRegistryProvider } from 'ui/registry/vis_types';
@@ -18,7 +18,7 @@ VisTypesRegistryProvider.register(function (Private) {
     title: 'wafer map',
     image,
     description: 'Wafer Map to show the wafer testing data',
-    category: CATEGORY.OTHER,
+    //category: CATEGORY.OTHER,
     stage: 'lab',
     visConfig: {
       defaults: {
