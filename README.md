@@ -1,6 +1,30 @@
 # WaferMap : a kibana plugin to visualize the wafer map
 
-![a](wafermap.png)
+![wafermap](wafermap.png)
+
+## use case
+  - `single wafer binning map, supports customized soft/hard bin color, linear color, and ordinal colors.`
+  - `yield of wafer/wafer lots, only supports linear color.`
+  - `wafer/wafer lot parametric value map, only supports linear color.`
+  
+## tips and limitations 
+  - `the x/y must be a positive number, the mapping type must be the Numberic`
+  - `the cell color metric should be also Numberic type, e.g. test value or bin number`
+  - `Reverse Color and Color Schema are only for linear color type`
+  - `user can modify the Default Axis Orientation[x/asc, y/des] in the kibana.yml`
+  - `user need to config the hard/soft bin field name and hard/soft bin color mappings in the kibana.yml if they want to use the customized color`
+## example of kibana.yml for wafermap plugin configurations
+  - `wafermap.defaultXAxisOrientation: "des"`
+  - `wafermap.defaultYAxisOrientation: "asc"`
+  - `wafermap.defaultSoftBinName: "SoftBin"`
+  - `wafermap.defaultHardBinName: "HardBin"`
+  - `wafermap.defaultSoftBinColor: "0-RGB(0,0,0):1-RGB(0,255,0)"`
+  - `wafermap.defaultHardBinColor: 0-RGB(0,0,0):1-RGB(0,255,0):2-RGB(0,255,0):3-RGB(0,255,0):4-RGB(0,255,0):5-RGB(0,0,255)`
+  
+## Installation
+<pre>
+./kibana-plugin install https://github.com/guanghaofan/wafermap/releases/releases/download/6.x.x/kibana-xlsx-import-6.x.x.zip
+</pre>
 
 ## development
 
@@ -33,3 +57,4 @@ See the [kibana contributing guide](https://github.com/elastic/kibana/blob/maste
     Run the server tests using mocha.
 
 For more information about any of these commands run `yarn ${task} --help`. For a full list of tasks checkout the `package.json` file, or run `yarn run`.
+
