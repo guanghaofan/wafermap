@@ -1,4 +1,5 @@
-import d3 from 'd3';
+const d3 = require('d3');
+//import d3 from 'd3';
 //import d3Tip from "d3-tip"
 //import { seedColors } from 'ui/vis/components/color/seed_colors';
 import { EventEmitter } from 'events';
@@ -35,15 +36,71 @@ class WaferMap extends EventEmitter {
     this._marginRight = marginRight;
     this._marginNeighbor = marginNeighbor;
     this._element = domNode;
+    this._size = [1, 1];
+    
+    /*
     this._d3SvgContainer = d3.select(this._element).append('svg');
     this._svgGroup = this._d3SvgContainer.append('g')
         .attr("transform", "translate(" + this._marginLeft + "," + this._marginTop + ")");
-    this._size = [1, 1];
+    
 
     this._tooltip = d3.select(this._element).append("div")
       .attr("class", "tooltip")
       .style("opacity", 0);
+      */
+      
+    /**************************************************************************************************/
+  
+ 
+    
+    this._d3SvgContainer = d3.select(this._element).append('canvas')
+      .attr('width', this._element.offsetWidth)
+      .attr('height', this._element.offsetHeight);
+    this._context = this._d3SvgContainer.node().getContext("2d");
+    
+    
+    
+    /*
+    
+     this._canvas = d3.select(document.createElement('canvas'))
+      .attr('width', this._element.offsetWidth)
+      .attr('height', this._element.offsetHeight);
+     this._context = this._canvas.node().getContext('2d');
+     
+     
+    //this._element.appendChild(this._canvas);
+    
+    //this._canvasContainer = d3.select(this._element).append('canvas');
+    //this._canvasGroup = this._canvasContainer.append('g');
+    
+    //this._canvas = d3.select(document.createElement('canvas'));
+    var canvas = d3.select(this._element)
+      .append('canvas');
 
+    var context = canvas.node().getContext('2d');
+    
+ 
+      
+    this._canvasGroup = this._canvasContainer.append('g'); 
+    
+    this._context = this._canvasGroup.node().getContext('2d');
+    */
+    
+    //this._context.translate(this._marginLeft, this._marginTop);
+    
+    
+    //this._customBase = document.createElement('custom');
+    //this._custom = d3.select(this._customBase); // this is your SVG replacement and the parent of all other elements
+    
+    
+    this._groupSpacing = 4;
+    this._cellSpacing = 2;
+    //this._offsetTop = height / 5;
+    //this._cellSize = Math.floor((width - 11 * groupSpacing) / 100) - cellSpacing;
+
+    
+    
+    /**************************************************************************************************/
 
 
     //SETTING (non-configurable)
@@ -128,10 +185,6 @@ class WaferMap extends EventEmitter {
         this._defaultHBColors.set(binColor.split("-")[0], binColor.split("-")[1]);
       }
     }
-
-
-
-
   }
 
   setOptions(options, paramsOnly) {
@@ -146,6 +199,7 @@ class WaferMap extends EventEmitter {
     this._reverseColor = options.reverseColor;
     this._colorScale = options.colorScale;
     this._defaultAxisOrientation = options.defaultAxisOrientation;
+    this._isCanvas = true;
   }
 
   setData(minZ, maxZ, x, y, data, row, series, colorCategory) {
@@ -164,6 +218,7 @@ class WaferMap extends EventEmitter {
   }
 
   upateSVG() {
+    console.log("******************* start update svg ***********************");
     this._invalidate(false);
   }
   clearSVG() {
@@ -180,10 +235,13 @@ class WaferMap extends EventEmitter {
   }
 
   _updateContainerSize() {
+    
     this._d3SvgContainer.attr('width', this._element.offsetWidth);
     this._d3SvgContainer.attr('height', this._element.offsetHeight);
-    this._svgGroup.attr('width', this._element.offsetWidth);
-    this._svgGroup.attr('height', this._element.offsetHeight);
+    //this._svgGroup.attr('width', this._element.offsetWidth);
+    //this._svgGroup.attr('height', this._element.offsetHeight);
+    
+    this._context.clearRect(0, 0, this._element.offsetWidth, this._element.offsetHeight);
   }
 
   _isJobRunning() {
@@ -191,60 +249,23 @@ class WaferMap extends EventEmitter {
   }
 
   async _processPendingJob() {
-
-    if (!this._pendingJob) {
-      return;
-    }
-
-    if (this._isJobRunning()) {
-      return;
-    }
-
-
-    this._completedJob = null;
-    const job = await this._pickPendingJob();
-    if (job.words.length) {
-      await this._updateDOM(job);
-    } else {
-      this._emptyDOM(job);
-    }
-
-    if (this._pendingJob) {
-      this._processPendingJob();//pick up next job
-    } else {
-      this._completedJob = job;
+      await this._updateDOM();
       this.emit('renderComplete');
-    }
+    
 
-  }
-
-  async _pickPendingJob() {
-    return await new Promise((resolve) => {
-      this._setTimeoutId = setTimeout(async () => {
-        const job = this._pendingJob;
-        this._pendingJob = null;
-        this._setTimeoutId = null;
-        resolve(job);
-      }, 0);
-    });
   }
 
 
   _emptyDOM() {
-    this._svgGroup.selectAll('*').remove();
+    //this._svgGroup.selectAll('*').remove();
     this._cloudWidth = 0;
     this._cloudHeight = 0;
     this._allInViewBox = true;
     this._DOMisUpdating = false;
   }
 
-  async _updateDOM(job) {
+  async _updateDOM() {
 
-    const canSkipDomUpdate = this._pendingJob || this._setTimeoutId;
-    if (canSkipDomUpdate) {
-      this._DOMisUpdating = false;
-      return;
-    }
 
     this._DOMisUpdating = true;
 
@@ -284,10 +305,10 @@ class WaferMap extends EventEmitter {
                         ["#008000", "#FF0000"]
       );
 
-      var colorScale = d3.scale.linear()
+      var colorScale = d3.scaleLinear()
         .domain(d3.range(0, 1, 1.0 / (this._colorRange.length)))
         .range(this._colorRange);
-      var colorDomain = d3.scale.linear().domain([this._minZ,this._maxZ]).range([0,1]);
+      var colorDomain = d3.scaleLinear().domain([this._minZ,this._maxZ]).range([0,1]);
 
       var tooltip = this._tooltip;
       var defaultAxisOrientation = this._defaultAxisOrientation;
@@ -315,6 +336,7 @@ class WaferMap extends EventEmitter {
 
   const height = this._element.offsetHeight - this._marginTop - this._marginBottom;
   const width = this._element.offsetWidth - this._marginLeft - this._marginRight;
+  console.log("width: " + width + ", height: " + height);
 
 	if (tableCnt === 1) {
 		this._columnCnt = 1;
@@ -385,6 +407,9 @@ class WaferMap extends EventEmitter {
 
   cellHeight = (height / this._rowCnt - this._marginNeighbor) / (this._y.length + spaceCellCnt);
 	cellWidth = (width / this._columnCnt - this._marginNeighbor) / (this._x.length + spaceCellCnt);
+	
+	console.log("cellHeight: " + cellHeight + ", cellWitdth: " + cellWidth);
+	console.log("maxX: " + this._x.length + ", maxY: " + this._y);
 	if (cellHeight < 10) {
 	  if (this._colorBucket !== 2) {
 			  this._colorBucket = 4;
@@ -394,9 +419,9 @@ class WaferMap extends EventEmitter {
   var isOrdinal = false;
   var isCustomziedBinning = false;
 
-  var colorScale20 = d3.scale.category20();
-  var colorScale20b = d3.scale.category20b();
-  var colorScale20c = d3.scale.category20c();
+  var colorScale20 = d3.scaleOrdinal(d3.schemeCategory20);
+  var colorScale20b = d3.scaleOrdinal(d3.schemeCategory20b);
+  var colorScale20c = d3.scaleOrdinal(d3.schemeCategory20c);
 
   var isSoftBining = metricTitle.indexOf(this._defaultSBinName) === -1 ? false : true;
   var isHardBining = metricTitle.indexOf(this._defaultHBinName) === -1 ? false : true;
@@ -419,14 +444,46 @@ class WaferMap extends EventEmitter {
     }
   }
   var colorCategory = [];
-
+  
+  this._context.translate(this._marginLeft, this._marginTop);
+  
   while (tableNo !== tableCnt) {
     let rowNo = Math.floor(tableNo / this._columnCnt);
     let ltx = (tableNo % this._columnCnt) / this._columnCnt * width;
     let lty = rowNo * (height / this._rowCnt);
-
-    // plot the last row x-axis only
-
+    var context = this._context;
+    var marginLeft = this._marginLeft; 
+    var marginTop = this._marginTop;
+    
+    
+      this._x.forEach(function(d, i){
+        var i =  revertX(i, maxX, defaultAxisOrientation, xAxisOrientationDefault, xIsAsc);
+        var x = (i) * cellWidth + ltx;
+        var y = lty + (maxY + 1 + spaceCellCnt / 2) * cellHeight;
+        var opacity = cellWidth >= 30 ? 1 : cellWidth >= 20 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;
+        if(opacity === 1){
+          drawText(context, d, x, y, cellWidth, cellHeight);
+        }
+      });
+      
+      if (this._series) {
+        drawText(this._context, this._words[tableNo].title, ltx + maxX * cellWidth / 2, lty + chartHeight -this._marginNeighbor + 10, cellWidth, cellHeight);
+      }
+      
+      if (tableNo % this._columnCnt === 0) {
+        this._y.forEach(function(d, i){
+          var i = revertY(i, maxY, defaultAxisOrientation, yAxisOrientationDefault, yIsDes);
+          var y = (i) * cellHeight + lty;
+          var x = 0;
+          var opacity = cellHeight >= 30 ? 1 : cellHeight >= 20 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;
+          if(opacity === 1) {
+            drawText(context, d, x - cellWidth / 2 - 10, y, cellWidth, cellHeight);
+          }
+        });
+      }
+  
+  
+      /*
       var xLabels = this._svgGroup.selectAll("xLabel-" + tableNo)
             .data(this._x)
           xLabels.exit().remove();
@@ -443,22 +500,7 @@ class WaferMap extends EventEmitter {
             .attr("y", function (d, i) {
               return lty + (maxY + 1 + spaceCellCnt / 2) * cellHeight;
            });
-         // xAxis title
-         /*
-         var xAxisTitle = this._svgGroup.append("text")
-             .text(xTitle.split(":")[0] + ": Descending")
-             .attr("x",
-               ltx + maxX * cellWidth / 2
-             )
-             .attr("y",
-               lty + chartHeight - this._marginNeighbor
-             )
-             .attr("dy", "1em")
-             .attr("font-size", "0.8em")
-             .style("text-anchor", "middle");
-          */
 
-          // sereis title if necessary
           if (this._series) {
             var xSeriesTitle = this._svgGroup.append("text")
              .text(this._words[tableNo].title)
@@ -491,40 +533,68 @@ class WaferMap extends EventEmitter {
               i = revertY(i, maxY, defaultAxisOrientation, yAxisOrientationDefault, yIsDes);
               return (i + 0.5) * cellHeight + lty;
             });
-            // yAxis title
-         /**
-         var yAxisTitle = this._svgGroup.append("text")
-             .text(yTitle.split(":")[0] + ": Ascending")
-             .attr("font-size", "0.8em")
-             .attr("transform", "rotate(-90)")
-             .attr("x", 0 - lty - cellHeight * maxY / 2)
-             .attr("y", this._rowCnt > 1 ? -25 : -35)
-             //.attr("dy", ".5em")
-             .style("text-anchor", "middle");
-         */
       }
+     */
+      
+    
+    if(this._isCanvas) {
+    var data = this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows;
+        var context = this._context;
 
-    var rectangles = this._svgGroup.selectAll("rect-" + tableNo)
-          .data(this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows)
-        rectangles.exit().remove();
-        rectangles
-          .enter()
-          .append("g");
-
-        var map = rectangles.append("rect")
-           .attr("x", function (d) {
-             var x = revertX(d[0], maxX, defaultAxisOrientation, xAxisOrientationDefault, xIsAsc);
-             return (x * cellWidth + ltx);
-           })
-           .attr("y", function(d) {
-            var y = revertY(d[1], maxY, defaultAxisOrientation, yAxisOrientationDefault, yIsDes);
-            return (y * cellHeight + lty);
-           })
-
-          .attr("width", cellWidth)
-          .attr("height", cellHeight)
-          .attr('fill', function(d) {
-            var colorNo = 0;
+        data.forEach(function(d, i) {
+          var temp = revertX(d[0], maxX, defaultAxisOrientation, xAxisOrientationDefault, xIsAsc);
+          var x = (temp * cellWidth + ltx);
+          
+          temp = revertY(d[1], maxY, defaultAxisOrientation, yAxisOrientationDefault, yIsDes);
+          var y= (temp * cellHeight + lty);
+          context.beginPath();
+          context.fillStyle=colorScale(i);
+          context.fillRect(x, y, cellWidth, cellHeight);
+          drawText(context, d[2], x, y, cellWidth, cellHeight);
+          console.log("x= " + x + ", y = " +y);
+          
+          context.closePath();
+        });
+    
+      /*
+      var join = this._custom.selectAll('custom.rect').data(this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows);
+        
+        console.log("ltx: " + ltx + ", lty: " + lty);
+     
+     
+     var exitSel = join.exit()
+        .transition()
+        .attr('width', 0)
+        .attr('height', 0)
+        .remove();
+        
+      var enterSel = join.enter()
+        .append('custom')
+        .attr('class', 'rect')
+        .attr("x", function(d, i) {
+        
+          var x = revertX(d[0], maxX, defaultAxisOrientation, xAxisOrientationDefault, xIsAsc);
+          console.log('x:' + x + ",cellWidth:" + cellWidth + ",ltxt: " + ltx);
+          console.log("x=x * cellWidth + ltx is:" + (x * cellWidth + ltx));
+          return (x * cellWidth + ltx);
+          
+      
+        })
+        .attr("y", function(d, i) {
+          var y = revertY(d[1], maxY, defaultAxisOrientation, yAxisOrientationDefault, yIsDes);
+          return (y * cellHeight + lty);
+       
+        })
+        .attr('width', 0)
+        .attr('height', 0);
+        
+      join
+        .merge(enterSel)
+        .transition()
+        .attr('width', cellWidth)
+        .attr('height', cellHeight)
+        .attr('fillStyle', function(d) { 
+          var colorNo = 0;
             if (isOrdinal) {
               colorNo = getOrdinalColor(d[2], colorCategory);
               colorScale = d3.scale.category20();
@@ -552,169 +622,77 @@ class WaferMap extends EventEmitter {
             else {
               return isOrdinal ? colorScale(colorNo) : colorScale(reverseColor ? 1 -  colorDomain(d[2]) : colorDomain(d[2]));
             }
-          });
-
-
-          if (this._showLabel) {
-            rectangles.append('text')
-            .text(function (d) {
-              return d[2];
-            })
-            .style('display', function (d) {
-              const textLength = this.getBBox().width;
-              const textHeight = this.getBBox().height;
-              const textTooLong = textLength > cellWidth;
-              const textTooWide = textHeight > cellHeight;
-              return textTooLong || textTooWide ? 'none' : 'initial';
-            })
-            .style('dominant-baseline', 'central')
-            .style('text-anchor', 'middle')
-            .style('fill', '#000000')
-            .attr("x", function (d) {
-               var x = revertX(d[0], maxX, defaultAxisOrientation, xAxisOrientationDefault, xIsAsc);
-               return (x + 0.5) * cellWidth + ltx;
-            })
-            .attr("y", function(d) {
-              var y = revertY(d[1], maxY, defaultAxisOrientation, yAxisOrientationDefault, yIsDes);
-              return (y + 0.5) * cellHeight + lty;
-            });
-          }
-
-          let seriesTitle = "";
-          // add for tooltip
-          if (isSeries) {
-            seriesTitle = this._words[tableNo].title.split(":")[1];
-          }
-          let _xTitle = xTitle.split(":")[0];
-          let _yTitle = yTitle.split(":")[0];
-
-          let seriesTitleLength = seriesTitle.length;
-          let maxTitleLength = seriesTitleLength > xTitleLength ?
-            (seriesTitleLength > yTitleLength ? seriesTitleLength : yTitleLength)
-            : (xTitleLength > yTitleLength ? xTitleLength : yTitleLength);
-          maxTitleLength = maxTitleLength > metricTitleLength ? maxTitleLength : metricTitleLength;
-          while (metricTitleLength ++ < (maxTitleLength)) {
-            metricTitle += '&nbsp;';
-          }
-          while (xTitleLength ++ < maxTitleLength) {
-            _xTitle += '&nbsp;';
-          }
-          while (yTitleLength ++ < maxTitleLength) {
-            _yTitle += '&nbsp;';
-          }
-          while (seriesTitleLength ++ < maxTitleLength) {
-            seriesTitle += '&nbsp;';
-          }
-          seriesTitle = isSeries ? ("<br/>"  + seriesTitle + '&nbsp;' + this._words[tableNo].title.split(":")[0]) : '';
-          const enableToolTip = this._addTooltip;
-          map.on("mouseover", function(d) {
-             d3.select(this).classed("cell-hover",true);
-                tooltip.html(metricTitle + '&nbsp;' + d[2]
-                  + "<br/>"  + _xTitle + '&nbsp;' + d[0]
-                  + "<br/>"  + _yTitle + '&nbsp;' + d[1]
-                  + seriesTitle
-                 )
-                 .style("left", (d3.mouse(this)[0] + (d[0] < maxX / 2 ? -100 : 60)) + "px")
-                 .style("top", (d3.mouse(this)[1] + (d[1] < maxY / 2 ? -100 : 60)) + "px")
-
-                 .style("opacity", enableToolTip ? 1 : 0)
-                ;
-           })
-           .on("mouseout", function(d) {
-             d3.select(this).classed("cell-hover",false);
-             tooltip.style("opacity", 0);
-         });
+        });
+        this._drawCanvas(tableNo, cellWidth, cellHeight);
+        */
+  
         tableNo++;
+    }
+      
+  }
+      /*
+      this._d3SvgContainer.onmousemove = function(event) {
+          console.log(event);
+          var _pagex = event.pageX;
+          var _pagey = event.pageY;
+          var _pageLengthX = (_pagex / 10) | 0;
+          var _pageLengthY = (_pagey / 10) | 0;
+          
+        console.log(_pageLengthX);
+       
+          context.fillStyle = '#f60';
+          context.fillRect(
+              _pageLengthX * 10,
+              _pageLengthY * 10,
+              10,
+              10);
+              
       }
-      // sort the color lable if needed
-      if (isOrdinal || isCustomziedBinning) {
-        colorCategory.sort(function(a, b){
-          return a[1] - b[1];
-        });
+      */
+      
+      /*
+      
+     this._d3SvgContainer.on('click', () => {
+      // Get coordinates of click relative to the canvas element
+      var coordinates = d3.mouse(canvas.node());
+      // Coordinates is a 2 element array: [x,y];
+      var course = getCourseAtCoordinates(coordinates[0], coordinates[1]);
+      if (course) {
+        window.open(course.url, '_new');
       }
+    });
+    */
 
-      // add the color legend
-      var colors = [];
-      const legendWidth = 20;
-      var colorBucket = (isOrdinal || isCustomziedBinning) ? colorCategory.length - 1 : this._colorBucket;
-      const dis = (this._maxZ - this._minZ) / colorBucket;
-      let colorNo = 0;
-      const legendHeight = height / ((colorBucket + 4));
-      while (colorNo != colorBucket + 1) {
-       // this._colors[colorNo] = num2e(dis * colorNo + this._minZ);
-        if (isOrdinal || isCustomziedBinning) {
-
-        }
-        else {
-          const colorValue = dis * colorNo + this._minZ;
-          colors.push(num2e(colorNo === colorBucket ? this._maxZ : colorValue));
-        }
-        colorNo++;
-      }
-
-
-      var legendLabels = this._svgGroup.selectAll("legendLabel").data(isOrdinal || isCustomziedBinning ? colorCategory : colors);
-      legendLabels.exit().remove();
-      legendLabels.enter().append("text")
-        .text(function (d) {
-          if (isOrdinal || isCustomziedBinning) {
-            return d[1];
-          }
-        return d;
-        })
-        .attr("class", "series-title")
-        .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 12)
-        .attr("y", function (d, i) { return (i + 1.5) * legendHeight; })
-        .attr("dy", "0.5em")
-        .style("text-anchor", "end");
-
-      var legendTitle = this._svgGroup.append("text")
-        .text(this._series ? this._words[0].tables["0"].columns[2].title : this._words[0].columns[2].title)
-        .attr("x", this._element.offsetWidth - this._marginLeft - 10)
-        .attr("y", legendHeight - 15)
-        .style("text-anchor", "end");
-
-
-      var legendRect = this._svgGroup.selectAll("legendRect").data(isOrdinal || isCustomziedBinning ? colorCategory : colors);
-      legendRect.exit().remove();
-
-      legendRect
-        .enter()
-        .append("rect")
-        .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 10)
-        .attr("y", function (d, i) { return (i +1) * legendHeight; })
-        .attr("width", legendWidth)
-        .attr("height", legendHeight)
-        .style("fill", function(d){
-          if (isOrdinal) {
-            var i = d[0];
-            if (i <= 19) {
-              colorScale = colorScale20;
-            }
-            else if (i <= 39) {
-              colorScale = colorScale20b;
-              i -= 20;
-            }
-            else {
-              colorScale = colorScale20c;
-              i -= 40;
-            }
-          }
-          else if (isCustomziedBinning) {
-            var binColor = isSoftBining ? defaultSBColors.get(d[1]) : defaultHBColors.get(d[1]);
-              if (binColor == null) {
-                return 'RGB(0,0,0)';
-              }
-              return binColor;
-          }
-
-          return isOrdinal ?  colorScale(i) : colorScale(reverseColor ? 1- colorDomain(d) : colorDomain(d));
-        });
      this._DOMisUpdating = false;
      resolve(true);
 
     });
   }
+  
+  
+  
+  _drawCanvas(tableNo, cellWidth, cellHeight) {
+      //draw the canvas
+        this._context.clearRect(0, 0, this._element.offsetWidth, this._element.offsetHeight);
+        
+        var elements = this._custom.selectAll('custom.rect') // this is the same as the join variable, but used here to draw
+        var context = this._context;
+        
+        
+        elements.each(function(d,i) {
+
+				// for each virtual/custom element...
+
+				var node = d3.select(this);
+				var style = node.attr('fillStyle');
+				context.fillStyle = node.attr('fillStyle');
+				context.fillRect(node.attr('x'), node.attr('y'), cellWidth, cellHeight);
+				console.log('x:' + node.attr('x') + ",y:" + node.attr('y'));
+
+			
+        }); // loop through each element
+  }
+  
 
 
   _makeNewJob() {
@@ -745,13 +723,14 @@ class WaferMap extends EventEmitter {
   _invalidate(keepLayout) {
 
     if (!this._words) {
+      console.log("data size is: 0");
       return;
+    }
+    else{
+      console.log("data size is: " + this._words.length);
     }
 
     this._updateContainerSize();
-
-    const canReuseLayout = false;
-    this._pendingJob = (canReuseLayout) ? this._makeJobPreservingLayout() : this._makeNewJob();
     this._processPendingJob();
   }
 
@@ -786,8 +765,59 @@ function getText(word) {
   return word.rawText;
 }
 
+function getCourseAtCoordinates(x, y) {
+    for(let i = groupKeys.length - 1; i >= 0; i--) {
+    let g = groupKeys[i];
+    if (groupTop[g] < y) {
+      // We know we're in this group, we know the size and spacing of the blocks
+      // so figuring out which the row and column we're pointing at is easy.
+      var row = Math.floor((y - groupTop[g] - groupSpacing) / (blockSize + spacing));
+      var col = Math.floor(x / (blockSize + spacing));
+      // Now get the index of the course
+      var index = row * cols + col;
+      // And finally the course itself
+      var course = groups[g][index];
+      return course || null;
+    }
+  }
+  return null;
+}
+
 function getDisplayText(word) {
   return word.displayText;
+}
+
+function drawLabel( ctx, text, p1, p2, alignment, padding ){
+  if (!alignment) alignment = 'center';
+  if (!padding) padding = 0;
+
+  var dx = p2.x - p1.x;
+  var dy = p2.y - p1.y;   
+  var p, pad;
+  if (alignment=='center'){
+    p = p1;
+    pad = 1/2;
+  } else {
+    var left = alignment=='left';
+    p = left ? p1 : p2;
+    pad = padding / Math.sqrt(dx*dx+dy*dy) * (left ? 1 : -1);
+  }
+
+  ctx.save();
+  ctx.textAlign = alignment;
+  ctx.translate(p.x+dx*pad,p.y+dy*pad);
+  ctx.rotate(Math.atan2(dy,dx));
+  ctx.fillText(text,0,0);
+  ctx.restore();
+}
+
+function drawText(context, text,  x, y, cellWidth, cellHeight) {
+    
+    context.font = "15px Arial";
+    context.textAlign = "center";
+    context.textBaseline = 'middle';
+    context.fillStyle='#000000';
+    context.fillText(text, x + cellWidth/2, y + cellHeight/2);
 }
 
 function positionWord(xTranslate, yTranslate, word) {
