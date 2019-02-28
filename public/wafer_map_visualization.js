@@ -266,14 +266,16 @@ export class WaferMapVisualization {
         maxX = (maxX < chartData[rowNo][0] ? chartData[rowNo][0] : maxX);
         maxY = (maxY < chartData[rowNo][1] ? chartData[rowNo][1] : maxY);
         if (tableNo ===0 && rowNo === 0) {
-          minZ = chartData[rowNo][2];
+          var floatData = 0.0 + chartData[rowNo][2];
+          minZ = floatData;
           maxZ = minZ;
-          chartData[rowNo][2] = this._fieldFormat.getConverterFor('text')(chartData[rowNo][2], null, null, null).replace(',', '');
+          chartData[rowNo][2] = this._fieldFormat.getConverterFor('text')(floatData, null, null, null).replace(',', '');
         }
         else {
-          maxZ = (maxZ < chartData[rowNo][2] ? chartData[rowNo][2] : maxZ);
-          minZ = (minZ > chartData[rowNo][2] ? chartData[rowNo][2] : minZ);
-          chartData[rowNo][2] = this._fieldFormat.getConverterFor('text')(chartData[rowNo][2], null, null, null).replace(',', '');
+          var floatData = 0.0 + chartData[rowNo][2];
+          maxZ = (maxZ < floatData ? floatData : maxZ);
+          minZ = (minZ > floatData ? floatData : minZ);
+          chartData[rowNo][2] = this._fieldFormat.getConverterFor('text')(floatData, null, null, null).replace(',', '');
         }
         if (category && category.length < 3) {
           if (!category.includes(chartData[rowNo][2])) {
