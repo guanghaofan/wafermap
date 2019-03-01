@@ -35,6 +35,20 @@
       ></select>
     </div>
   </div>
+  
+  <div class="kuiSideBarFormRow">
+    <label class="kuiSideBarFormRow__label" for="chartType">
+      Chart Type
+    </label>
+    <div class="kuiSideBarFormRow__control">
+      <select
+        id="chartType"
+        class="form-control"
+        ng-model="editorState.params.chartType"
+        ng-options="mode for mode in config.collections.chartTypes"
+      ></select>
+    </div>
+  </div>
 
   <div class="kuiSideBarFormRow">
     <label class="kuiSideBarFormRow__label" for="reverseColor">

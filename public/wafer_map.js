@@ -43,8 +43,14 @@ class WaferMap extends EventEmitter {
     this._tooltip = d3.select(this._element).append("div")
       .attr("class", "tooltip")
       .style("opacity", 0);
-
-
+    /*
+     * add feature to support canvas chart type to plot huge amout data
+    */
+    this._isCanvas = false;
+    this._d3CanvasContainer = d3.select(this._element).append('canvas')
+      .attr('width', this._element.offsetWidth)
+      .attr('height', this._element.offsetHeight);
+    this._context = this._d3CanvasContainer.node().getContext("2d");
 
     //SETTING (non-configurable)
     this._fontFamily = 'Open Sans, sans-serif';
@@ -146,6 +152,7 @@ class WaferMap extends EventEmitter {
     this._reverseColor = options.reverseColor;
     this._colorScale = options.colorScale;
     this._defaultAxisOrientation = options.defaultAxisOrientation;
+    this._isCanvas = (options.chartType === 'Canvas' ? true : false);
   }
 
   setData(minZ, maxZ, x, y, data, row, series, colorCategory) {
@@ -180,10 +187,24 @@ class WaferMap extends EventEmitter {
   }
 
   _updateContainerSize() {
-    this._d3SvgContainer.attr('width', this._element.offsetWidth);
-    this._d3SvgContainer.attr('height', this._element.offsetHeight);
-    this._svgGroup.attr('width', this._element.offsetWidth);
-    this._svgGroup.attr('height', this._element.offsetHeight);
+    if (this._isCanvas) {
+      this._emptyDOM();
+      this._svgGroup.attr('width', 0);
+      this._svgGroup.attr('height', 0);
+      this._d3SvgContainer.attr('width', 0);
+      this._d3SvgContainer.attr('height', 0);
+      this._d3CanvasContainer.attr('width', this._element.offsetWidth);
+      this._d3CanvasContainer.attr('height', this._element.offsetHeight);
+    }
+    else {
+      this._d3SvgContainer.attr('width', this._element.offsetWidth);
+      this._d3SvgContainer.attr('height', this._element.offsetHeight);
+      this._svgGroup.attr('width', this._element.offsetWidth);
+      this._svgGroup.attr('height', this._element.offsetHeight);
+      this._d3CanvasContainer.attr('width', 0);
+      this._d3CanvasContainer.attr('height', 0);
+      this._context.clearRect(0, 0, 0, 0);
+    }
   }
 
   _isJobRunning() {
@@ -419,11 +440,66 @@ class WaferMap extends EventEmitter {
     }
   }
   var colorCategory = [];
+  this._context.translate(this._marginLeft, this._marginTop);
 
   while (tableNo !== tableCnt) {
     let rowNo = Math.floor(tableNo / this._columnCnt);
     let ltx = (tableNo % this._columnCnt) / this._columnCnt * width;
     let lty = rowNo * (height / this._rowCnt);
+    var context = this._context;
+    var marginLeft = this._marginLeft;
+    var marginTop = this._marginTop;
+
+    if(this._isCanvas) {
+      /*
+       * plot the x/y axis
+       */
+      this._x.forEach(function(d, i){
+        var i =  revertX(i, maxX, defaultAxisOrientation, xAxisOrientationDefault, xIsAsc);
+        var x = (i) * cellWidth + ltx;
+        var y = lty + (maxY + 1 + spaceCellCnt / 2) * cellHeight;
+        var opacity = cellWidth >= 30 ? 1 : cellWidth >= 20 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;
+        if(opacity === 1){
+          drawText(context, d, x, y, cellWidth, cellHeight, '10 10px Roboto, sans-serif');
+        }
+      });
+
+      if (this._series) {
+        drawText(this._context, this._words[tableNo].title, ltx + maxX * cellWidth / 2, lty + chartHeight -this._marginNeighbor + 10, cellWidth, cellHeight, '10 10px Roboto, sans-serif');
+      }
+
+      if (tableNo % this._columnCnt === 0) {
+        this._y.forEach(function(d, i){
+          var i = revertY(i, maxY, defaultAxisOrientation, yAxisOrientationDefault, yIsDes);
+          var y = (i) * cellHeight + lty;
+          var x = 0;
+          var opacity = cellHeight >= 30 ? 1 : cellHeight >= 20 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;
+          if(opacity === 1) {
+            drawText(context, d, x - cellWidth / 2 - 10, y, cellWidth, cellHeight, '10 10px Roboto, sans-serif');
+          }
+        });
+      }
+
+      var data = this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows;
+      var context = this._context;
+      var showLabel = this._showLabel;
+
+      data.forEach(function(d, i) {
+        var temp = revertX(d[0], maxX, defaultAxisOrientation, xAxisOrientationDefault, xIsAsc);
+        var x = (temp * cellWidth + ltx);
+
+        temp = revertY(d[1], maxY, defaultAxisOrientation, yAxisOrientationDefault, yIsDes);
+        var y= (temp * cellHeight + lty);
+        context.beginPath();
+        context.fillStyle=colorScale(i);
+        context.fillRect(x, y, cellWidth - 2, cellHeight - 2);
+        if (showLabel) {
+          drawText(context, d[2], x, y, cellWidth, cellHeight, '400 14px Roboto, sans-serif');
+        }
+        console.log("x= " + x + ", y = " +y);
+        context.closePath();
+      });
+    }
 
     // plot the last row x-axis only
 
@@ -889,6 +965,14 @@ function revertY(y, maxY, defaultAxisOrientation, yAxisOrientationDefault, yIsDe
     }
     return y;
   }
+}
+
+function drawText(context, text,  x, y, cellWidth, cellHeight, font) {
+    context.font = font;
+    context.textAlign = "center";
+    context.textBaseline = 'middle';
+    context.fillStyle='#000000';
+    context.fillText(text, x + cellWidth/2, y + cellHeight/2);
 }
 
 
