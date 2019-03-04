@@ -13,6 +13,7 @@
   - `Reverse Color and Color Schema are only for linear color type`
   - `user can modify the Default Axis Orientation[x/asc, y/des] in the kibana.yml`
   - `user need to config the hard/soft bin field name and hard/soft bin color mappings in the kibana.yml if they want to use the customized color`
+  - `user can switch the chart type from SVG to Canvas to fast plot the big data size wafer maps`
 ## example of kibana.yml for wafermap plugin configurations
   - `wafermap.defaultXAxisOrientation: "des"`
   - `wafermap.defaultYAxisOrientation: "asc"`
