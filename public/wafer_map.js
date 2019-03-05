@@ -51,12 +51,12 @@ class WaferMap extends EventEmitter {
       .attr('width', this._element.offsetWidth)
       .attr('height', this._element.offsetHeight);
     this._context = this._d3CanvasContainer.node().getContext("2d");
-
+    
     this._virtualCanvas = d3.select(this._element).append('canvas')
       .classed('hiddenCanvas', true)
       .attr('width', this._element.offsetWidth)
       .attr('height', this._element.offsetHeight);
-    this._virtualContext = this._virtualCanvas.node().getContext('2d');
+    this._virtualContext = this._virtualCanvas.node().getContext('2d');  
 
     //SETTING (non-configurable)
     this._fontFamily = 'Open Sans, sans-serif';
@@ -140,7 +140,7 @@ class WaferMap extends EventEmitter {
         this._defaultHBColors.set(binColor.split("-")[0], binColor.split("-")[1]);
       }
     }
-
+    
     this._nextCol = 1;
 
 
@@ -204,7 +204,7 @@ class WaferMap extends EventEmitter {
       this._d3CanvasContainer.attr('width', this._element.offsetWidth);
       this._d3CanvasContainer.attr('height', this._element.offsetHeight);
       this._virtualCanvas.attr('width', this._element.offsetWidth);
-      this._virtualCanvas.attr('height', this._element.offsetHeight);
+      this._virtualCanvas.attr('height', this._element.offsetHeight);  
     }
     else {
       this._d3SvgContainer.attr('width', this._element.offsetWidth);
@@ -468,7 +468,7 @@ class WaferMap extends EventEmitter {
     var virtualContext = this._virtualContext;
     var marginLeft = this._marginLeft;
     var marginTop = this._marginTop;
-
+    
     let seriesTitle = "";
           // add for tooltip
           if (isSeries) {
@@ -510,10 +510,9 @@ class WaferMap extends EventEmitter {
           drawText(context, d, x, y, '10 10px Roboto, sans-serif');
         }
       });
-      var yCoordTitle = lty + chartHeight - this._marginNeighbor;
-      yCoordTitle = cellHeight < 10 ? yCoordTitle + 8 : yCoordTitle;
+
       if (this._series) {
-        drawText(this._context, this._words[tableNo].title, ltx + (maxX + 1)* cellWidth / 2, yCoordTitle, '10 10px Roboto, sans-serif');
+        drawText(this._context, this._words[tableNo].title, ltx + (maxX + 1)* cellWidth / 2, lty + chartHeight - this._marginNeighbor, '10 10px Roboto, sans-serif');
       }
 
       if (tableNo % this._columnCnt === 0) {
@@ -529,7 +528,7 @@ class WaferMap extends EventEmitter {
       }
 
       var data = this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows;
-
+      
       var showLabel = this._showLabel;
       var nextCol = this._nextCol;
       data.forEach(function(d, i) {
@@ -538,7 +537,7 @@ class WaferMap extends EventEmitter {
 
         temp = revertY(d[1], maxY, defaultAxisOrientation, yAxisOrientationDefault, yIsDes);
         var y= (temp * cellHeight + lty);
-
+        
         // color
         var cellColor = 'RGB(0,0,0)';
         var colorNo = 0;
@@ -563,16 +562,16 @@ class WaferMap extends EventEmitter {
           var binColor = isSoftBining ? defaultSBColors.get(d[2]) : defaultHBColors.get(d[2]);
           if (binColor == null) {
           }
-          else{
+          else{ 
             cellColor = binColor;
           }
         }
         else {
           cellColor = isOrdinal ? colorScale(colorNo) : colorScale(reverseColor ? 1 -  colorDomain(d[2]) : colorDomain(d[2]));
         }
-
-
-
+        
+        
+        
         // virtual canvas to help the hover
         virtualContext.beginPath();
         var virtualColor = genColor(nextCol);
@@ -590,30 +589,30 @@ class WaferMap extends EventEmitter {
         if (showLabel) {
           drawLabelText(context, d[2], x, y, cellWidth, cellHeight, '400 14px Roboto, sans-serif');
         }
-
+        
         console.log("x= " + x + ", y = " +y);
-
+        
       });
       var virtualCanvas = this._virtualCanvas;
       this._d3CanvasContainer.on('mousemove', function() {
           const mouse = d3.mouse(this);
-          const x = mouse[0] - xOffSet;
+          const x = mouse[0] - xOffSet; 
           const y = mouse[1] - yOffSet;
           console.log('x = ' + x + ", y = " + y);
-
-
-
-          // get the toolbox for the hidden canvas
+          
+          
+          
+          // get the toolbox for the hidden canvas  
           var hiddenCtx = virtualCanvas.node().getContext('2d');
 
           // Now pick the colours from where our mouse is then stringify the values in a way our map-object can read it
           var col = hiddenCtx.getImageData(x, y, 1, 1).data;
           var colKey = 'rgb(' + col[0] + ',' + col[1] + ',' + col[2] + ')';
-
+          
           // get the data from our map!
           var nodeData = colorToData[colKey];
           if(nodeData != null) {
-
+          
             console.log(colKey + "," + nodeData);
             tooltip.html(metricTitle + '&nbsp;' + nodeData[2]
                   + "<br/>"  + _xTitle + '&nbsp;' + nodeData[0]
@@ -623,7 +622,7 @@ class WaferMap extends EventEmitter {
                  //.style("left", (d3.mouse(this)[0] + (d[0] < maxX / 2 ? -100 : 60)) + "px")
                  //.style("top", (d3.mouse(this)[1] + (d[1] < maxY / 2 ? -100 : 60)) + "px")
                  .style("left", (x + cellWidth) + "px")
-                 .style("top", (y + cellHeight) + "px")
+                 .style("top", (y + cellHeight) + "px") 
                  .style("opacity", enableToolTip ? 1 : 0)
                 ;
           }
@@ -790,7 +789,7 @@ class WaferMap extends EventEmitter {
             });
           }
 
-
+          
           map.on("mouseover", function(d) {
              d3.select(this).classed("cell-hover",true);
                 tooltip.html(metricTitle + '&nbsp;' + d[2]
@@ -860,7 +859,7 @@ class WaferMap extends EventEmitter {
                 i -= 40;
               }
             }
-
+            
             if (isCustomziedBinning) {
               var binColor = isSoftBining ? defaultSBColors.get(d[1]) : defaultHBColors.get(d[1]);
                 if (binColor == null) {
@@ -871,8 +870,8 @@ class WaferMap extends EventEmitter {
             else{
               lgColor = isOrdinal ?  colorScale(i) : colorScale(reverseColor ? 1- colorDomain(d) : colorDomain(d));
             }
-
-
+            
+            
           context.beginPath();
           context.fillStyle = lgColor;
           context.fillRect(x + 2, y, legendWidth, legendHeight - 1);
@@ -882,9 +881,9 @@ class WaferMap extends EventEmitter {
         x = this._element.offsetWidth - this._marginLeft - 10;
         y = legendHeight - 15;
         drawLegendTitle(context, title, x, y, '400 14px Roboto, sans-serif');
-
-
-
+        
+        
+      
       }
       else{
         var legendLabels = this._svgGroup.selectAll("legendLabel").data(isOrdinal || isCustomziedBinning ? colorCategory : colors);
@@ -901,7 +900,7 @@ class WaferMap extends EventEmitter {
           .attr("y", function (d, i) { return (i + 1.5) * legendHeight; })
           .attr("dy", "0.5em")
           .style("text-anchor", "end");
-
+          
 
         var legendTitle = this._svgGroup.append("text")
           .text(this._series ? this._words[0].tables["0"].columns[2].title : this._words[0].columns[2].title)
@@ -1160,11 +1159,11 @@ function drawLabelText(context, text,  x, y, cellWidth, cellHeight, font) {
 }
 
 function genColor(nextCol){
-
+  
       var ret = [];
       if(nextCol < 16777215){
         ret.push(nextCol & 0xff); // R
-        ret.push((nextCol & 0xff00) >> 8); // G
+        ret.push((nextCol & 0xff00) >> 8); // G 
         ret.push((nextCol & 0xff0000) >> 16); // B
       }
       var col = "rgb(" + ret.join(',') + ")";
