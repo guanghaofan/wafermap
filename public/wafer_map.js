@@ -143,7 +143,7 @@ class WaferMap extends EventEmitter {
 
     this._nextCol = 1;
 
-
+    this._waferLot = '';
 
 
   }
@@ -163,7 +163,7 @@ class WaferMap extends EventEmitter {
     this._isCanvas = (options.chartType === 'Canvas' ? true : false);
   }
 
-  setData(minZ, maxZ, x, y, data, row, series, colorCategory) {
+  setData(minZ, maxZ, x, y, data, row, series, colorCategory, waferLot) {
     //this._x = [];
     //this._y = [];
     this._minZ = minZ;
@@ -174,6 +174,7 @@ class WaferMap extends EventEmitter {
     this._row = row;
     this._series =series;
     this._colorBucket = (colorCategory === 2 ? 1 : 9);
+    this._waferLot = waferLot;
     //this._xTitle = xTitle;
     //this._yTitle = yTitle;
   }
@@ -297,7 +298,7 @@ class WaferMap extends EventEmitter {
       let chartWidth = 0; // = xWidth - neighbor
       let chartHeight = 0;
       let spaceCellCnt = 1.5;
-
+      let waferLot = this._waferLot;
 
       this._emptyDOM();
 
@@ -515,7 +516,8 @@ class WaferMap extends EventEmitter {
       var yCoordTitle = lty + chartHeight -this._marginNeighbor;
       yCoordTitle = cellHeight < 10 ? yCoordTitle + 8 : yCoordTitle;
       if (this._series) {
-        drawText(this._context, this._words[tableNo].title, ltx + (maxX + 1)* cellWidth / 2, yCoordTitle, '10 10px Roboto, sans-serif');
+        var myTitle = this._words[tableNo].title.split(':');
+        drawText(this._context, waferLot + ',' + myTitle[1] + ': ' + myTitle[0], ltx + (maxX + 1)* cellWidth / 2, yCoordTitle, '10 10px Roboto, sans-serif');
       }
 
       if (tableNo % this._columnCnt === 0) {
@@ -674,8 +676,9 @@ class WaferMap extends EventEmitter {
           var yCoordTitle = lty + chartHeight -this._marginNeighbor;
           yCoordTitle = cellHeight < 10 ? yCoordTitle + 8 : yCoordTitle;
           if (this._series) {
+            var myTitle = this._words[tableNo].title.split(':');
             var xSeriesTitle = this._svgGroup.append("text")
-             .text(this._words[tableNo].title)
+             .text(waferLot + ',' + myTitle[1] + ': ' + myTitle[0])
              .attr("x",
                ltx + (maxX + 1) * cellWidth / 2
              )

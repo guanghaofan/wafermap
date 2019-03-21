@@ -293,6 +293,14 @@ export class WaferMapVisualization {
       x[columnNo] = columnNo;
       columnNo++;
     }
-    this._waferMap.setData(minZ, maxZ, x, y, response.tables, this._row, this._series, category.length);
+    var filters = this._vis.searchSource._fields.filter;
+    var waferLot = '';
+    filters.forEach(function(filter){
+      var meta = filter.meta;
+      if (meta.key === "WaferLot"){
+        waferLot += meta.value;
+      }
+    });
+    this._waferMap.setData(minZ, maxZ, x, y, response.tables, this._row, this._series, category.length, waferLot);
   }
 }
