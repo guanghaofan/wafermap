@@ -41,7 +41,7 @@ VisTypesRegistryProvider.register(function (Private) {
       collections: {
         colorSchemas: ['Green-Red', 'Green-Blue', 'Green-Yellow' , 'Green-Orange', 'Yellow-Pink', 'LightGreen-SkyBlue', 'DarkGreen-Brown', 'Green-Red-Yellow',
                        'Green-Yellow-Blue', 'Green-Yellow-Red', 'Green-Yellow-Pink', 'Green-Red-Blue', 'Green-Pink-Yellow'],
-                       colorScales: ['linear', 'ordinal', 'customzied binning'], chartTypes: ['SVG', 'Canvas'],
+                       colorScales: ['linear', 'ordinal', 'customzied binning'], chartTypes: ['SVG', 'Canvas', 'Plotly'],
 
       },
       optionsTemplate: '<wafermap-vis-params></wafermap-vis-params>',

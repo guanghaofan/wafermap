@@ -4,6 +4,7 @@ import d3 from 'd3';
 import { EventEmitter } from 'events';
 import BinColors from './BinColors';
 import chrome from 'ui/chrome';
+const Plotly = require('plotly.js');
 
 /**
 const ORIENTATIONS = {
@@ -47,16 +48,17 @@ class WaferMap extends EventEmitter {
      * add feature to support canvas chart type to plot huge amout data
     */
     this._isCanvas = false;
+    this._isPlotly = false;
     this._d3CanvasContainer = d3.select(this._element).append('canvas')
       .attr('width', this._element.offsetWidth)
       .attr('height', this._element.offsetHeight);
     this._context = this._d3CanvasContainer.node().getContext("2d");
-    
+
     this._virtualCanvas = d3.select(this._element).append('canvas')
       .classed('hiddenCanvas', true)
       .attr('width', this._element.offsetWidth)
       .attr('height', this._element.offsetHeight);
-    this._virtualContext = this._virtualCanvas.node().getContext('2d');  
+    this._virtualContext = this._virtualCanvas.node().getContext('2d');
 
     //SETTING (non-configurable)
     this._fontFamily = 'Open Sans, sans-serif';
@@ -140,7 +142,7 @@ class WaferMap extends EventEmitter {
         this._defaultHBColors.set(binColor.split("-")[0], binColor.split("-")[1]);
       }
     }
-    
+
     this._nextCol = 1;
 
 
@@ -161,6 +163,7 @@ class WaferMap extends EventEmitter {
     this._colorScale = options.colorScale;
     this._defaultAxisOrientation = options.defaultAxisOrientation;
     this._isCanvas = (options.chartType === 'Canvas' ? true : false);
+    this._isPlotly = (options.chartType === 'Plotly' ? true : false);
   }
 
   setData(minZ, maxZ, x, y, data, row, series, colorCategory) {
@@ -204,7 +207,7 @@ class WaferMap extends EventEmitter {
       this._d3CanvasContainer.attr('width', this._element.offsetWidth);
       this._d3CanvasContainer.attr('height', this._element.offsetHeight);
       this._virtualCanvas.attr('width', this._element.offsetWidth);
-      this._virtualCanvas.attr('height', this._element.offsetHeight);  
+      this._virtualCanvas.attr('height', this._element.offsetHeight);
     }
     else {
       this._d3SvgContainer.attr('width', this._element.offsetWidth);
@@ -266,6 +269,14 @@ class WaferMap extends EventEmitter {
 
   _emptyDOM() {
     this._svgGroup.selectAll('*').remove();
+    var tempDiv = this._element.getElementsByClassName('plot-container plotly');
+    if(tempDiv != null) {
+      let plotDiv = tempDiv[0];
+      if(plotDiv != null) {
+        plotDiv.innerHTML = '';
+        console.log(plotDiv);
+      }
+    }
     this._cloudWidth = 0;
     this._cloudHeight = 0;
     this._allInViewBox = true;
@@ -317,11 +328,26 @@ class WaferMap extends EventEmitter {
                         this._colorSchema === 'Green-Pink-Yellow' ? ["#008000", "#FFC0CB", "#FFFF00"] :
                         ["#008000", "#FF0000"]
       );
+      
+      var plotyColorScale = (this._colorSchema === 'Green-Red' ? [[0, "#008000"], [1, "#FF0000"]] :
+                        this._colorSchema === 'Green-Blue' ?     [[0, "#008000"], [1,"#0000FF"]] :
+                        this._colorSchema === 'Green-Yellow' ?   [[0, "#008000"], [1, "#FFFF00"]] :
+                        this._colorSchema === 'Green-Orange' ?   [[0, "#008000"], [1, "#FFA500"]] :
+                        this._colorSchema === 'Yellow-Pink' ?    [[0, "#FFFF00"], [1, "#FFC0CB"]] :
+                        this._colorSchema === 'LightGreen-SkyBlue' ? [[0, "#90EE90"], [1, "#87CEEB"]] :
+                        this._colorSchema === 'DarkGreen-Brown' ?    [[0, "#006400"], [1, "#A52A2A"]] :
+                        this._colorSchema === 'Green-Red-Yellow' ?   [[0, "#008000"], [0.5, "#FF0000"], [1, "#FFFF00"]] :
+                        this._colorSchema === 'Green-Yellow-Blue' ?  [[0, "#008000"], [0.5, "#FFFF00"], [1, "#0000FF"]] :
+                        this._colorSchema === 'Green-Yellow-Red' ?   [[0, "#008000"], [0.5, "#FFFF00"], [1, "#FF0000"]] :
+                        this._colorSchema === 'Green-Yellow-Pink' ?  [[0, "#008000"], [0.5, "#FFFF00"], [1, "#FFC0CB"]] :
+                        this._colorSchema === 'Green-Red-Blue' ?     [[0, "#008000"], [0.5, "#FF0000"], [1, "#0000FF"]] :
+                        this._colorSchema === 'Green-Pink-Yellow' ?  [[0, "#008000"], [0.5, "#FFC0CB"], [1, "#FFFF00"]] :[[0, "#008000"], [1, "#FF0000"]]);
 
       var colorScale = d3.scale.linear()
         .domain(d3.range(0, 1, 1.0 / (this._colorRange.length)))
         .range(this._colorRange);
       var colorDomain = d3.scale.linear().domain([this._minZ,this._maxZ]).range([0,1]);
+      
 
       var tooltip = this._tooltip;
       var defaultAxisOrientation = this._defaultAxisOrientation;
@@ -459,16 +485,42 @@ class WaferMap extends EventEmitter {
   //this._virtualContext.translate(this._marginLeft, this._marginTop);
   this._nextCol = 1;
   let colorToData = {};
+  
+  //for plotly data only
+  if(this._x.length * this._y.length > 10000) {
+    this._isPlotly = true;
+  }
+  
+  var layout = {};
+  var xValues = [];
+  var yValues = [];
+  var traces = [];
+  
+  if(this._isPlotly) {
+
+    //xValues = defaultAxisOrientation ? (xIsAsc ? this._x : this._x.sort(function(a, b){return a < b})) : xAxisOrientationDefault ? this._x : this._x.sort(function(a, b){return a < b});
+    //yValues = defaultAxisOrientation ? (yIsDes ? this._y : this._y.sort(function(a, b){return a < b})) : yAxisOrientationDefault ? this._y.sort(function(a, b){return a < b}) : this._y;
+    
+    xValues = this._x.sort(function(a,b){return a < b});
+    yValues = this._y.sort(function(a,b){return a < b});
+    
+     layout= {
+      font: {size: '9'},
+      annotations: [],
+      margin: {t: '30', b: '40', l: '20', r: '0', pad: '0', autoexpand: true}
+    };
+  }
 
   while (tableNo !== tableCnt) {
     let rowNo = Math.floor(tableNo / this._columnCnt);
+    let columnNo = tableNo % this._columnCnt;
     let ltx = (tableNo % this._columnCnt) / this._columnCnt * width;
     let lty = rowNo * (height / this._rowCnt);
     var context = this._context;
     var virtualContext = this._virtualContext;
     var marginLeft = this._marginLeft;
     var marginTop = this._marginTop;
-    
+
     let seriesTitle = "";
           // add for tooltip
           if (isSeries) {
@@ -496,8 +548,80 @@ class WaferMap extends EventEmitter {
           }
           seriesTitle = isSeries ? ("<br/>"  + seriesTitle + '&nbsp;' + this._words[tableNo].title.split(":")[0]) : '';
           const enableToolTip = this._addTooltip;
+          
+    if (this._isPlotly) {
+      var plot_z = [];
+      let plotRows = this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows;
+      let yNo = 0;
+      //let xaxis = 'x' +  (columnNo + 1);
+      let xaxis = 'x' +  (tableNo + 1);
+      let yaxis = 'y' + (rowNo + 1);
+      
+        layout['xaxis' + (tableNo + 1)] = {
+          ticks: '',
+          side: 'bottom',
+          type: 'category',
+          showgrid: false,
+          domain: [1/this._columnCnt * columnNo, 1/this._columnCnt * (columnNo + 1)],
+          title: {text: this._series ? this._words[tableNo].title : '' },
+          anchor: yaxis,
+          showticklabels: rowNo === this._rowCnt - 1 ? true: false
+        };
+      
+      if (layout['yaxis' + (rowNo + 1)] == null) {
+        layout['yaxis' + (rowNo + 1)] = {
+          ticks: '',
+          ticksuffix: ' ',
+          autosize: false,
+          type: 'category',
+          showgrid: false,
+          domain: [1/this._rowCnt * (this._rowCnt - rowNo - 1), 1/this._rowCnt * (this._rowCnt - rowNo)],
+          anchor: xaxis
+        }
+      }
+      
+      
+      yValues.forEach(function(y){
+        let xNo = 0;
+        let zData = [];
+        xValues.forEach(function(x){
+           let z = plotRows.find(function(row){
+            return (row[0].key === x && row[1].key === y);
+          });
+          if(z == null){
+            zData[xNo] = null;
+          }
+          else{
+            zData[xNo] = z[2];
+          }
+          xNo ++;
+        });
+        plot_z[yNo] = zData;
+        yNo ++;
+      });
+    
+      var data = {
+        x: xValues,
+        y: yValues,
+        xaxis: xaxis,
+        yaxis: yaxis,
+        z: plot_z,
+        type: 'heatmap',
+        xgap: 1,
+        ygap: 1,
 
-    if(this._isCanvas) {
+        colorscale: plotyColorScale,
+        zmin: this._minZ,
+        zmax: this._maxZ,
+        name: this._series ? this._words[tableNo].title : '',
+        showscale: tableNo === 0 ? true : false,
+        reversescale: this._reverseColor
+      };
+      traces[traces.length] = data;
+      
+
+    }
+    else if(this._isCanvas) {
       /*
        * plot the x/y axis
        */
@@ -528,7 +652,7 @@ class WaferMap extends EventEmitter {
       }
 
       var data = this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows;
-      
+
       var showLabel = this._showLabel;
       var nextCol = this._nextCol;
       data.forEach(function(d, i) {
@@ -537,7 +661,7 @@ class WaferMap extends EventEmitter {
 
         temp = revertY(d[1], maxY, defaultAxisOrientation, yAxisOrientationDefault, yIsDes);
         var y= (temp * cellHeight + lty);
-        
+
         // color
         var cellColor = 'RGB(0,0,0)';
         var colorNo = 0;
@@ -562,16 +686,16 @@ class WaferMap extends EventEmitter {
           var binColor = isSoftBining ? defaultSBColors.get(d[2]) : defaultHBColors.get(d[2]);
           if (binColor == null) {
           }
-          else{ 
+          else{
             cellColor = binColor;
           }
         }
         else {
           cellColor = isOrdinal ? colorScale(colorNo) : colorScale(reverseColor ? 1 -  colorDomain(d[2]) : colorDomain(d[2]));
         }
-        
-        
-        
+
+
+
         // virtual canvas to help the hover
         virtualContext.beginPath();
         var virtualColor = genColor(nextCol);
@@ -589,30 +713,30 @@ class WaferMap extends EventEmitter {
         if (showLabel) {
           drawLabelText(context, d[2], x, y, cellWidth, cellHeight, '400 14px Roboto, sans-serif');
         }
-        
+
         console.log("x= " + x + ", y = " +y);
-        
+
       });
       var virtualCanvas = this._virtualCanvas;
       this._d3CanvasContainer.on('mousemove', function() {
           const mouse = d3.mouse(this);
-          const x = mouse[0] - xOffSet; 
+          const x = mouse[0] - xOffSet;
           const y = mouse[1] - yOffSet;
           console.log('x = ' + x + ", y = " + y);
-          
-          
-          
-          // get the toolbox for the hidden canvas  
+
+
+
+          // get the toolbox for the hidden canvas
           var hiddenCtx = virtualCanvas.node().getContext('2d');
 
           // Now pick the colours from where our mouse is then stringify the values in a way our map-object can read it
           var col = hiddenCtx.getImageData(x, y, 1, 1).data;
           var colKey = 'rgb(' + col[0] + ',' + col[1] + ',' + col[2] + ')';
-          
+
           // get the data from our map!
           var nodeData = colorToData[colKey];
           if(nodeData != null) {
-          
+
             console.log(colKey + "," + nodeData);
             tooltip.html(metricTitle + '&nbsp;' + nodeData[2]
                   + "<br/>"  + _xTitle + '&nbsp;' + nodeData[0]
@@ -622,7 +746,7 @@ class WaferMap extends EventEmitter {
                  //.style("left", (d3.mouse(this)[0] + (d[0] < maxX / 2 ? -100 : 60)) + "px")
                  //.style("top", (d3.mouse(this)[1] + (d[1] < maxY / 2 ? -100 : 60)) + "px")
                  .style("left", (x + cellWidth) + "px")
-                 .style("top", (y + cellHeight) + "px") 
+                 .style("top", (y + cellHeight) + "px")
                  .style("opacity", enableToolTip ? 1 : 0)
                 ;
           }
@@ -633,6 +757,7 @@ class WaferMap extends EventEmitter {
           // get the datum to highlight
       });
     }
+    else{
 
     // plot the last row x-axis only
 
@@ -789,7 +914,7 @@ class WaferMap extends EventEmitter {
             });
           }
 
-          
+
           map.on("mouseover", function(d) {
              d3.select(this).classed("cell-hover",true);
                 tooltip.html(metricTitle + '&nbsp;' + d[2]
@@ -807,144 +932,154 @@ class WaferMap extends EventEmitter {
              d3.select(this).classed("cell-hover",false);
              tooltip.style("opacity", 0);
          });
+         }
         tableNo++;
       }
-      // sort the color lable if needed
-      if (isOrdinal || isCustomziedBinning) {
-        colorCategory.sort(function(a, b){
-          return a[1] - b[1];
-        });
-      }
 
-      // add the color legend
-      var colors = [];
-      const legendWidth = 20;
-      var colorBucket = (isOrdinal || isCustomziedBinning) ? colorCategory.length - 1 : this._colorBucket;
-      const dis = (this._maxZ - this._minZ) / colorBucket;
-      let colorNo = 0;
-      const legendHeight = height / ((colorBucket + 4));
-      while (colorNo != colorBucket + 1) {
-       // this._colors[colorNo] = num2e(dis * colorNo + this._minZ);
+      if (this._isPlotly) {
+        Plotly.newPlot(this._element, traces, layout, {showSendToCloud: true});
+
+      }
+      else
+      {
+
+        // sort the color lable if needed
         if (isOrdinal || isCustomziedBinning) {
-
-        }
-        else {
-          const colorValue = dis * colorNo + this._minZ;
-          colors.push(num2e(colorNo === colorBucket ? this._maxZ : colorValue));
-        }
-        colorNo++;
-      }
-
-      if (this._isCanvas) {
-        var data = isOrdinal || isCustomziedBinning ? colorCategory : colors;
-        var x = this._element.offsetWidth - this._marginLeft - legendWidth - 12;
-        var y = 0;
-        data.forEach(function (d, i) {
-          var text = isOrdinal || isCustomziedBinning ? d[1] : d;
-          y = (i + 1.5) * legendHeight;
-          drawLegendText(context, text, x, y, '10 10px Roboto, sans-serif');
-          y = (i + 1) * legendHeight;
-          var lgColor;
-            if (isOrdinal) {
-              var i = d[0];
-              if (i <= 19) {
-                colorScale = colorScale20;
-              }
-              else if (i <= 39) {
-                colorScale = colorScale20b;
-                i -= 20;
-              }
-              else {
-                colorScale = colorScale20c;
-                i -= 40;
-              }
-            }
-            
-            if (isCustomziedBinning) {
-              var binColor = isSoftBining ? defaultSBColors.get(d[1]) : defaultHBColors.get(d[1]);
-                if (binColor == null) {
-                  lgColor = 'RGB(0,0,0)';
-                }
-                lgColor = binColor;
-            }
-            else{
-              lgColor = isOrdinal ?  colorScale(i) : colorScale(reverseColor ? 1- colorDomain(d) : colorDomain(d));
-            }
-            
-            
-          context.beginPath();
-          context.fillStyle = lgColor;
-          context.fillRect(x + 2, y, legendWidth, legendHeight - 1);
-          context.closePath();
-        });
-        var title = this._series ? this._words[0].tables["0"].columns[2].title : this._words[0].columns[2].title;
-        x = this._element.offsetWidth - this._marginLeft - 10;
-        y = legendHeight - 15;
-        drawLegendTitle(context, title, x, y, '400 14px Roboto, sans-serif');
-        
-        
-      
-      }
-      else{
-        var legendLabels = this._svgGroup.selectAll("legendLabel").data(isOrdinal || isCustomziedBinning ? colorCategory : colors);
-        legendLabels.exit().remove();
-        legendLabels.enter().append("text")
-          .text(function (d) {
-            if (isOrdinal || isCustomziedBinning) {
-              return d[1];
-            }
-          return d;
-          })
-          .attr("class", "series-title")
-          .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 12)
-          .attr("y", function (d, i) { return (i + 1.5) * legendHeight; })
-          .attr("dy", "0.5em")
-          .style("text-anchor", "end");
-          
-
-        var legendTitle = this._svgGroup.append("text")
-          .text(this._series ? this._words[0].tables["0"].columns[2].title : this._words[0].columns[2].title)
-          .attr("x", this._element.offsetWidth - this._marginLeft - 10)
-          .attr("y", legendHeight - 15)
-          .style("text-anchor", "end");
-
-
-        var legendRect = this._svgGroup.selectAll("legendRect").data(isOrdinal || isCustomziedBinning ? colorCategory : colors);
-        legendRect.exit().remove();
-
-        legendRect
-          .enter()
-          .append("rect")
-          .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 10)
-          .attr("y", function (d, i) { return (i +1) * legendHeight; })
-          .attr("width", legendWidth)
-          .attr("height", legendHeight)
-          .style("fill", function(d){
-            if (isOrdinal) {
-              var i = d[0];
-              if (i <= 19) {
-                colorScale = colorScale20;
-              }
-              else if (i <= 39) {
-                colorScale = colorScale20b;
-                i -= 20;
-              }
-              else {
-                colorScale = colorScale20c;
-                i -= 40;
-              }
-            }
-            else if (isCustomziedBinning) {
-              var binColor = isSoftBining ? defaultSBColors.get(d[1]) : defaultHBColors.get(d[1]);
-                if (binColor == null) {
-                  return 'RGB(0,0,0)';
-                }
-                return binColor;
-            }
-
-            return isOrdinal ?  colorScale(i) : colorScale(reverseColor ? 1- colorDomain(d) : colorDomain(d));
+          colorCategory.sort(function(a, b){
+            return a[1] - b[1];
           });
-      }
+        }
+
+        // add the color legend
+        var colors = [];
+        const legendWidth = 20;
+        var colorBucket = (isOrdinal || isCustomziedBinning) ? colorCategory.length - 1 : this._colorBucket;
+        const dis = (this._maxZ - this._minZ) / colorBucket;
+        let colorNo = 0;
+        const legendHeight = height / ((colorBucket + 4));
+        while (colorNo != colorBucket + 1) {
+         // this._colors[colorNo] = num2e(dis * colorNo + this._minZ);
+          if (isOrdinal || isCustomziedBinning) {
+
+          }
+          else {
+            const colorValue = dis * colorNo + this._minZ;
+            colors.push(num2e(colorNo === colorBucket ? this._maxZ : colorValue));
+          }
+          colorNo++;
+        }
+
+        if (this._isCanvas) {
+          var data = isOrdinal || isCustomziedBinning ? colorCategory : colors;
+          var x = this._element.offsetWidth - this._marginLeft - legendWidth - 12;
+          var y = 0;
+          data.forEach(function (d, i) {
+            var text = isOrdinal || isCustomziedBinning ? d[1] : d;
+            y = (i + 1.5) * legendHeight;
+            drawLegendText(context, text, x, y, '10 10px Roboto, sans-serif');
+            y = (i + 1) * legendHeight;
+            var lgColor;
+              if (isOrdinal) {
+                var i = d[0];
+                if (i <= 19) {
+                  colorScale = colorScale20;
+                }
+                else if (i <= 39) {
+                  colorScale = colorScale20b;
+                  i -= 20;
+                }
+                else {
+                  colorScale = colorScale20c;
+                  i -= 40;
+                }
+              }
+
+              if (isCustomziedBinning) {
+                var binColor = isSoftBining ? defaultSBColors.get(d[1]) : defaultHBColors.get(d[1]);
+                  if (binColor == null) {
+                    lgColor = 'RGB(0,0,0)';
+                  }
+                  lgColor = binColor;
+              }
+              else{
+                lgColor = isOrdinal ?  colorScale(i) : colorScale(reverseColor ? 1- colorDomain(d) : colorDomain(d));
+              }
+
+
+            context.beginPath();
+            context.fillStyle = lgColor;
+            context.fillRect(x + 2, y, legendWidth, legendHeight - 1);
+            context.closePath();
+          });
+          var title = this._series ? this._words[0].tables["0"].columns[2].title : this._words[0].columns[2].title;
+          x = this._element.offsetWidth - this._marginLeft - 10;
+          y = legendHeight - 15;
+          drawLegendTitle(context, title, x, y, '400 14px Roboto, sans-serif');
+
+
+
+        }
+        else{
+          var legendLabels = this._svgGroup.selectAll("legendLabel").data(isOrdinal || isCustomziedBinning ? colorCategory : colors);
+          legendLabels.exit().remove();
+          legendLabels.enter().append("text")
+            .text(function (d) {
+              if (isOrdinal || isCustomziedBinning) {
+                return d[1];
+              }
+            return d;
+            })
+            .attr("class", "series-title")
+            .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 12)
+            .attr("y", function (d, i) { return (i + 1.5) * legendHeight; })
+            .attr("dy", "0.5em")
+            .style("text-anchor", "end");
+
+
+          var legendTitle = this._svgGroup.append("text")
+            .text(this._series ? this._words[0].tables["0"].columns[2].title : this._words[0].columns[2].title)
+            .attr("x", this._element.offsetWidth - this._marginLeft - 10)
+            .attr("y", legendHeight - 15)
+            .style("text-anchor", "end");
+
+
+          var legendRect = this._svgGroup.selectAll("legendRect").data(isOrdinal || isCustomziedBinning ? colorCategory : colors);
+          legendRect.exit().remove();
+
+          legendRect
+            .enter()
+            .append("rect")
+            .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 10)
+            .attr("y", function (d, i) { return (i +1) * legendHeight; })
+            .attr("width", legendWidth)
+            .attr("height", legendHeight)
+            .style("fill", function(d){
+              if (isOrdinal) {
+                var i = d[0];
+                if (i <= 19) {
+                  colorScale = colorScale20;
+                }
+                else if (i <= 39) {
+                  colorScale = colorScale20b;
+                  i -= 20;
+                }
+                else {
+                  colorScale = colorScale20c;
+                  i -= 40;
+                }
+              }
+              else if (isCustomziedBinning) {
+                var binColor = isSoftBining ? defaultSBColors.get(d[1]) : defaultHBColors.get(d[1]);
+                  if (binColor == null) {
+                    return 'RGB(0,0,0)';
+                  }
+                  return binColor;
+              }
+
+              return isOrdinal ?  colorScale(i) : colorScale(reverseColor ? 1- colorDomain(d) : colorDomain(d));
+            });
+        }
+     }
      this._DOMisUpdating = false;
      resolve(true);
 
@@ -1159,11 +1294,11 @@ function drawLabelText(context, text,  x, y, cellWidth, cellHeight, font) {
 }
 
 function genColor(nextCol){
-  
+
       var ret = [];
       if(nextCol < 16777215){
         ret.push(nextCol & 0xff); // R
-        ret.push((nextCol & 0xff00) >> 8); // G 
+        ret.push((nextCol & 0xff00) >> 8); // G
         ret.push((nextCol & 0xff0000) >> 16); // B
       }
       var col = "rgb(" + ret.join(',') + ")";
