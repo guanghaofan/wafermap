@@ -575,7 +575,7 @@ class WaferMap extends EventEmitter {
           autosize: false,
           type: 'category',
           showgrid: false,
-          domain: [1/this._rowCnt * (this._rowCnt - rowNo - 1), 1/this._rowCnt * (this._rowCnt - rowNo)],
+          domain: [1/this._rowCnt * (this._rowCnt - rowNo - 1) - - (rowNo != 0 ? 0.05 : 0), 1/this._rowCnt * (this._rowCnt - rowNo) - (0.1)],
           anchor: xaxis
         }
       }
