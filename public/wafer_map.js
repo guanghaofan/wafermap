@@ -145,6 +145,7 @@ class WaferMap extends EventEmitter {
 
     this._waferLot = '';
 
+    this._significantFigures = 0;
 
   }
 
@@ -161,6 +162,7 @@ class WaferMap extends EventEmitter {
     this._colorScale = options.colorScale;
     this._defaultAxisOrientation = options.defaultAxisOrientation;
     this._isCanvas = (options.chartType === 'Canvas' ? true : false);
+    this._significantFigures = options.significantFigure;
   }
 
   setData(minZ, maxZ, x, y, data, row, series, colorCategory, waferLot) {
@@ -330,6 +332,9 @@ class WaferMap extends EventEmitter {
       let tableNo = 0;
       let metricTitle = this._series ? this._words[tableNo].tables["0"].columns[2].title : this._words[tableNo].columns[2].title;
       let metricField = this._series ? this._words[tableNo].tables["0"].columns[2].aggConfig._opts.params.field : this._words[tableNo].columns[2].aggConfig._opts.params.field;
+      if (metricField == null) {
+        metricField = '';
+      }
 
       const xTitle = this._series ? this._words[tableNo].tables["0"].columns[0].title : this._words[tableNo].columns[0].title;
       const yTitle = this._series ? this._words[tableNo].tables["0"].columns[1].title : this._words[tableNo].columns[1].title;
@@ -440,6 +445,10 @@ class WaferMap extends EventEmitter {
   var isSoftBining = metricField.indexOf(this._defaultSBinName) === -1 ? false : true;
   var isHardBining = metricField.indexOf(this._defaultHBinName) === -1 ? false : true;
   var isBinning = (isSoftBining || isHardBining);
+
+  if (isSoftBining && isHardBining) {
+    isSoftBining = false;
+  }
 
   var defaultSBColors = this._defaultSBColors;
   var defaultHBColors = this._defaultHBColors;
@@ -837,8 +846,9 @@ class WaferMap extends EventEmitter {
 
         }
         else {
-          const colorValue = dis * colorNo + this._minZ;
-          colors.push(num2e(colorNo === colorBucket ? this._maxZ : colorValue));
+          let colorValue = dis * colorNo + this._minZ;
+          colorValue = colorValue.toFixed(this._significantFigures);
+          colors.push(colorNo === colorBucket ? this._maxZ : colorValue);
         }
         colorNo++;
       }
@@ -901,7 +911,7 @@ class WaferMap extends EventEmitter {
             if (isOrdinal || isCustomziedBinning) {
               return d[1];
             }
-          return d;
+            return d;
           })
           .attr("class", "series-title")
           .attr("x", this._element.offsetWidth - this._marginLeft - legendWidth - 12)
