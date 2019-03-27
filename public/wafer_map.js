@@ -634,9 +634,10 @@ class WaferMap extends EventEmitter {
           drawText(context, d, x, y, '10 10px Roboto, sans-serif');
         }
       });
-
+      var yCoordTitle = lty + chartHeight -this._marginNeighbor;
+      yCoordTitle = cellHeight < 10 ? yCoordTitle + 8 : yCoordTitle;
       if (this._series) {
-        drawText(this._context, this._words[tableNo].title, ltx + (maxX + 1)* cellWidth / 2, lty + chartHeight - this._marginNeighbor, '10 10px Roboto, sans-serif');
+        drawText(this._context, this._words[tableNo].title, ltx + (maxX + 1)* cellWidth / 2, yCoordTitle, '10 10px Roboto, sans-serif');
       }
 
       if (tableNo % this._columnCnt === 0) {
@@ -793,6 +794,8 @@ class WaferMap extends EventEmitter {
           */
 
           // sereis title if necessary
+          var yCoordTitle = lty + chartHeight -this._marginNeighbor;
+          yCoordTitle = cellHeight < 10 ? yCoordTitle + 8 : yCoordTitle;
           if (this._series) {
             var xSeriesTitle = this._svgGroup.append("text")
              .text(this._words[tableNo].title)
@@ -800,7 +803,7 @@ class WaferMap extends EventEmitter {
                ltx + (maxX + 1) * cellWidth / 2
              )
              .attr("y",
-               lty + chartHeight -this._marginNeighbor
+               yCoordTitle
              )
              .attr("dy", "1em")
              .attr("class", "series-title")
