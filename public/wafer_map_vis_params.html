@@ -49,6 +49,20 @@
       ></select>
     </div>
   </div>
+  
+  <div class="kuiSideBarFormRow">
+    <label class="kuiSideBarFormRow__label" for="significantFigure">
+      Significant Figures
+    </label>
+    <div class="kuiSideBarFormRow__control">
+      <select
+        id="significantFigure"
+        class="form-control"
+        ng-model="editorState.params.significantFigure"
+        ng-options="mode for mode in config.collections.significantFigures"
+      ></select>
+    </div>
+  </div>
 
   <div class="kuiSideBarFormRow">
     <label class="kuiSideBarFormRow__label" for="reverseColor">
