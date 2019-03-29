@@ -144,10 +144,6 @@ class WaferMap extends EventEmitter {
     }
 
     this._nextCol = 1;
-
-
-
-
   }
 
   setOptions(options, paramsOnly) {
@@ -328,7 +324,7 @@ class WaferMap extends EventEmitter {
                         this._colorSchema === 'Green-Pink-Yellow' ? ["#008000", "#FFC0CB", "#FFFF00"] :
                         ["#008000", "#FF0000"]
       );
-      
+
       var plotyColorScale = (this._colorSchema === 'Green-Red' ? [[0, "#008000"], [1, "#FF0000"]] :
                         this._colorSchema === 'Green-Blue' ?     [[0, "#008000"], [1,"#0000FF"]] :
                         this._colorSchema === 'Green-Yellow' ?   [[0, "#008000"], [1, "#FFFF00"]] :
@@ -347,7 +343,7 @@ class WaferMap extends EventEmitter {
         .domain(d3.range(0, 1, 1.0 / (this._colorRange.length)))
         .range(this._colorRange);
       var colorDomain = d3.scale.linear().domain([this._minZ,this._maxZ]).range([0,1]);
-      
+
 
       var tooltip = this._tooltip;
       var defaultAxisOrientation = this._defaultAxisOrientation;
@@ -474,7 +470,6 @@ class WaferMap extends EventEmitter {
   else if (this._colorScale === 'customzied binning' && isBinning) {
     isCustomziedBinning = (isSoftBining && defaultSBColors.size > 0) || (isHardBining && defaultHBColors.size > 0);
 
-
     if (!isCustomziedBinning) {
       isSoftBining = false;
       isHardBining = false;
@@ -482,33 +477,53 @@ class WaferMap extends EventEmitter {
   }
   var colorCategory = [];
   this._context.translate(this._marginLeft, this._marginTop);
-  //this._virtualContext.translate(this._marginLeft, this._marginTop);
   this._nextCol = 1;
   let colorToData = {};
-  
+
   //for plotly data only
   if(this._x.length * this._y.length > 10000) {
     this._isPlotly = true;
   }
-  
+
   var layout = {};
   var xValues = [];
   var yValues = [];
   var traces = [];
-  
-  if(this._isPlotly) {
+  var xReversed = false;
+  var yReversed = false;
+  var xGap = 0;
+  var yGap = 0;
+  var yDomainSize = 0;
+    xValues = this._x.sort(function(a,b){return a - b});
+    yValues = this._y.sort(function(a,b){return a - b});
 
-    //xValues = defaultAxisOrientation ? (xIsAsc ? this._x : this._x.sort(function(a, b){return a < b})) : xAxisOrientationDefault ? this._x : this._x.sort(function(a, b){return a < b});
-    //yValues = defaultAxisOrientation ? (yIsDes ? this._y : this._y.sort(function(a, b){return a < b})) : yAxisOrientationDefault ? this._y.sort(function(a, b){return a < b}) : this._y;
-    
-    xValues = this._x.sort(function(a,b){return a < b});
-    yValues = this._y.sort(function(a,b){return a < b});
-    
+    var xReversed = false;
+    if((defaultAxisOrientation && (!xIsAsc)) || (!xAxisOrientationDefault)) {
+      xReversed = true;
+    }
+    if((defaultAxisOrientation && yIsDes) || (yAxisOrientationDefault)) {
+      yReversed = true;
+    }
+
+  if(this._isPlotly) {
      layout= {
       font: {size: '9'},
       annotations: [],
-      margin: {t: '30', b: '40', l: '20', r: '0', pad: '0', autoexpand: true}
+      margin: {t: '0', b: '30', l: '20', r: '0', pad: '0', autoexpand: true}
     };
+    xGap = 5 / (this._element.offsetWidth - 50);
+    yGap = 40 / (this._element.offsetHeight);
+    yDomainSize = (this._element.offsetHeight - (40 * this._rowCnt - 1)) / this._rowCnt / this._element.offsetHeight; 
+  }
+  else {
+    if (xReversed) {
+      this._x.sort(function(a,b){return b - a});
+      xValues = this._x;
+    }
+    if (yReversed) {
+      this._y.sort(function(a,b){return b - a});
+      yValues = this._y;
+    }
   }
 
   while (tableNo !== tableCnt) {
@@ -522,7 +537,6 @@ class WaferMap extends EventEmitter {
     var marginTop = this._marginTop;
 
     let seriesTitle = "";
-          // add for tooltip
           if (isSeries) {
             seriesTitle = this._words[tableNo].title.split(":")[1];
           }
@@ -548,39 +562,39 @@ class WaferMap extends EventEmitter {
           }
           seriesTitle = isSeries ? ("<br/>"  + seriesTitle + '&nbsp;' + this._words[tableNo].title.split(":")[0]) : '';
           const enableToolTip = this._addTooltip;
-          
+
     if (this._isPlotly) {
       var plot_z = [];
       let plotRows = this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows;
       let yNo = 0;
-      //let xaxis = 'x' +  (columnNo + 1);
       let xaxis = 'x' +  (tableNo + 1);
       let yaxis = 'y' + (rowNo + 1);
-      
+      let yStart = (yDomainSize + yGap) * (this._rowCnt - rowNo - 1);
         layout['xaxis' + (tableNo + 1)] = {
           ticks: '',
           side: 'bottom',
-          type: 'category',
+          //type: 'category',
           showgrid: false,
-          domain: [1/this._columnCnt * columnNo, 1/this._columnCnt * (columnNo + 1)],
+          domain: [1/this._columnCnt * columnNo, 1/this._columnCnt * (columnNo + 1) - xGap],
           title: {text: this._series ? this._words[tableNo].title : '' },
           anchor: yaxis,
-          showticklabels: rowNo === this._rowCnt - 1 ? true: false
+          showticklabels: rowNo === this._rowCnt - 1 ? true: false,
+          autorange: xReversed ? 'reversed' : ''
         };
-      
+
       if (layout['yaxis' + (rowNo + 1)] == null) {
         layout['yaxis' + (rowNo + 1)] = {
           ticks: '',
           ticksuffix: ' ',
           autosize: false,
-          type: 'category',
+          //type: 'category',
           showgrid: false,
-          domain: [1/this._rowCnt * (this._rowCnt - rowNo - 1) - - (rowNo != 0 ? 0.05 : 0), 1/this._rowCnt * (this._rowCnt - rowNo) - (0.1)],
-          anchor: xaxis
+          domain: [yStart, yStart + yDomainSize],
+          anchor: xaxis,
+          autorange: xReversed ? 'reversed' : ''
         }
       }
-      
-      
+
       yValues.forEach(function(y){
         let xNo = 0;
         let zData = [];
@@ -599,8 +613,8 @@ class WaferMap extends EventEmitter {
         plot_z[yNo] = zData;
         yNo ++;
       });
-    
-      var data = {
+
+      let data = {
         x: xValues,
         y: yValues,
         xaxis: xaxis,
@@ -618,15 +632,11 @@ class WaferMap extends EventEmitter {
         reversescale: this._reverseColor
       };
       traces[traces.length] = data;
-      
+
 
     }
     else if(this._isCanvas) {
-      /*
-       * plot the x/y axis
-       */
-      this._x.forEach(function(d, i){
-        var i =  revertX(i, maxX, defaultAxisOrientation, xAxisOrientationDefault, xIsAsc);
+      xValues.forEach(function(d, i){
         var x = (i + 0.5) * cellWidth + ltx;
         var y = lty + (maxY + 1 + spaceCellCnt / 2) * cellHeight;
         var opacity = cellWidth >= 30 ? 1 : cellWidth >= 20 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;
@@ -641,9 +651,8 @@ class WaferMap extends EventEmitter {
       }
 
       if (tableNo % this._columnCnt === 0) {
-        this._y.forEach(function(d, i){
-          var i = revertY(i, maxY, defaultAxisOrientation, yAxisOrientationDefault, yIsDes);
-          var y = (i + 0.5) * cellHeight + lty;
+        yValues.forEach(function(d, i){
+          var y = (yValues.length - i - 1 + 0.5) * cellHeight + lty;
           var x = 0 - 5;
           var opacity = cellHeight >= 30 ? 1 : cellHeight >= 20 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;
           if(opacity === 1) {
@@ -656,16 +665,16 @@ class WaferMap extends EventEmitter {
 
       var showLabel = this._showLabel;
       var nextCol = this._nextCol;
-      data.forEach(function(d, i) {
-        var temp = revertX(d[0], maxX, defaultAxisOrientation, xAxisOrientationDefault, xIsAsc);
-        var x = (temp * cellWidth + ltx);
-
-        temp = revertY(d[1], maxY, defaultAxisOrientation, yAxisOrientationDefault, yIsDes);
-        var y= (temp * cellHeight + lty);
+      data.forEach(function(d) {
+      
+        let i = xValues.indexOf(d[0] + 0);
+        let x = (i * cellWidth + ltx);
+        i = yValues.length - yValues.indexOf(d[1] + 0) - 1;
+        let y = (i * cellHeight + lty);
 
         // color
-        var cellColor = 'RGB(0,0,0)';
-        var colorNo = 0;
+        let cellColor = 'RGB(0,0,0)';
+        let colorNo = 0;
         if (isOrdinal) {
           colorNo = getOrdinalColor(d[2], colorCategory);
           colorScale = d3.scale.category20();
@@ -763,7 +772,7 @@ class WaferMap extends EventEmitter {
     // plot the last row x-axis only
 
       var xLabels = this._svgGroup.selectAll("xLabel-" + tableNo)
-            .data(this._x)
+            .data(xValues)
           xLabels.exit().remove();
           xLabels.enter().append("text")
             .text(function (d) { return d; })
@@ -772,7 +781,6 @@ class WaferMap extends EventEmitter {
             .attr("class", "series-title")
             .attr("opacity", d=> {return cellWidth >= 15 ? 1 : cellWidth >= 10 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;})
             .attr("x", function (d, i) {
-              i =  revertX(i, maxX, defaultAxisOrientation, xAxisOrientationDefault, xIsAsc);
               return (i + 0.5) * cellWidth + ltx;
             })
             .attr("y", function (d, i) {
@@ -812,7 +820,7 @@ class WaferMap extends EventEmitter {
 
       if (tableNo % this._columnCnt === 0) {
           var yLabels = this._svgGroup.selectAll(".yLabel-" + tableNo)
-            .data(this._y);
+            .data(yValues);
           yLabels.exit().remove();
           yLabels.enter().append("text")
             .text(function (d) { return d; })
@@ -825,8 +833,7 @@ class WaferMap extends EventEmitter {
               return (0);
             })
             .attr("y", function (d, i) {
-              i = revertY(i, maxY, defaultAxisOrientation, yAxisOrientationDefault, yIsDes);
-              return (i + 0.5) * cellHeight + lty;
+              return (yValues.length - i -1 + 0.5) * cellHeight + lty;
             });
             // yAxis title
          /**
@@ -850,12 +857,12 @@ class WaferMap extends EventEmitter {
 
         var map = rectangles.append("rect")
            .attr("x", function (d) {
-             var x = revertX(d[0], maxX, defaultAxisOrientation, xAxisOrientationDefault, xIsAsc);
-             return (x * cellWidth + ltx);
+            let i = xValues.indexOf(d[0] + 0);
+             return (i * cellWidth + ltx);
            })
            .attr("y", function(d) {
-            var y = revertY(d[1], maxY, defaultAxisOrientation, yAxisOrientationDefault, yIsDes);
-            return (y * cellHeight + lty);
+            let i = yValues.length - yValues.indexOf(d[1] + 0) - 1;
+            return (i * cellHeight + lty);
            })
 
           .attr("width", cellWidth)
@@ -890,8 +897,6 @@ class WaferMap extends EventEmitter {
               return isOrdinal ? colorScale(colorNo) : colorScale(reverseColor ? 1 -  colorDomain(d[2]) : colorDomain(d[2]));
             }
           });
-
-
           if (this._showLabel) {
             rectangles.append('text')
             .text(function (d) {
@@ -908,12 +913,14 @@ class WaferMap extends EventEmitter {
             .style('text-anchor', 'middle')
             .style('fill', '#000000')
             .attr("x", function (d) {
-               var x = revertX(d[0], maxX, defaultAxisOrientation, xAxisOrientationDefault, xIsAsc);
-               return (x + 0.5) * cellWidth + ltx;
+              let i = xValues.indexOf(d[0] + 0) + 0.5;
+              console.log('x= ' + d[0] + ": " + i * cellWidth + ltx);
+              return (i * cellWidth + ltx);
             })
-            .attr("y", function(d) {
-              var y = revertY(d[1], maxY, defaultAxisOrientation, yAxisOrientationDefault, yIsDes);
-              return (y + 0.5) * cellHeight + lty;
+            .attr("y", function(d, i) {
+              i = yValues.length - yValues.indexOf(d[1] + 0) - 0.5;
+              console.log('y = ' + d[1] + ': '+ (i * cellHeight + lty) + ", z= " + d[2]);
+              return (i * cellHeight + lty);
             });
           }
 
@@ -961,7 +968,6 @@ class WaferMap extends EventEmitter {
         let colorNo = 0;
         const legendHeight = height / ((colorBucket + 4));
         while (colorNo != colorBucket + 1) {
-         // this._colors[colorNo] = num2e(dis * colorNo + this._minZ);
           if (isOrdinal || isCustomziedBinning) {
 
           }

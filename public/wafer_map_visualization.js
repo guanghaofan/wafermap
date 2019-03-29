@@ -210,6 +210,8 @@ export class WaferMapVisualization {
     let columnNo =0;
     let maxY = 0;
     let maxX = 0;
+    let minX = 100;
+    let minY = 100;
     let minZ = 0;
     let maxZ = 0;
     let tableNo = 0;
@@ -265,6 +267,9 @@ export class WaferMapVisualization {
       while (rowNo != rowCnt) {
         maxX = (maxX < chartData[rowNo][0] ? chartData[rowNo][0] : maxX);
         maxY = (maxY < chartData[rowNo][1] ? chartData[rowNo][1] : maxY);
+        minX = (minX > chartData[rowNo][0] ? chartData[rowNo][0] : minX);
+        minY = (minY > chartData[rowNo][1] ? chartData[rowNo][1] : minY);
+
         if (tableNo ===0 && rowNo === 0) {
           var floatData = 0.0 + chartData[rowNo][2];
           minZ = floatData;
@@ -290,9 +295,12 @@ export class WaferMapVisualization {
     maxZ = parseFloat (this._fieldFormat.getConverterFor('text')(maxZ, null, null, null).replace(',', ''));
     this._maxX = maxX + 1;
     this._maxY = maxY + 1;
+    minX = minX + 0;
+    minY = minY + 0;
     rowNo = 0;
-    let y = new Array(this._maxY);
-    let x = new Array(this._maxX);
+    let y = [];
+    let x = [];
+    /*
     while (rowNo != this._maxY) {
       y[rowNo] = rowNo;
       rowNo ++;
@@ -302,6 +310,17 @@ export class WaferMapVisualization {
       x[columnNo] = columnNo;
       columnNo++;
     }
+    */
+      rowNo = minY;
+      while (rowNo != this._maxY) {
+        y[rowNo - minY] = rowNo;
+        rowNo ++;
+      }
+      columnNo = minX;
+      while (columnNo != this._maxX) {
+        x[columnNo - minX] = columnNo;
+        columnNo++;
+      }
     this._waferMap.setData(minZ, maxZ, x, y, response.tables, this._row, this._series, category.length);
   }
 }
