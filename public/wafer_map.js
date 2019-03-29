@@ -350,6 +350,7 @@ class WaferMap extends EventEmitter {
 
       let tableNo = 0;
       let metricTitle = this._series ? this._words[tableNo].tables["0"].columns[2].title : this._words[tableNo].columns[2].title;
+      let metricField = this._series ? this._words[tableNo].tables["0"].columns[2].aggConfig._opts.params.field : this._words[tableNo].columns[2].aggConfig._opts.params.field;
       const xTitle = this._series ? this._words[tableNo].tables["0"].columns[0].title : this._words[tableNo].columns[0].title;
       const yTitle = this._series ? this._words[tableNo].tables["0"].columns[1].title : this._words[tableNo].columns[1].title;
       const xIsAsc = (this._defaultXAxisOri === 'asc' ? true : false);
@@ -456,8 +457,8 @@ class WaferMap extends EventEmitter {
   var colorScale20b = d3.scale.category20b();
   var colorScale20c = d3.scale.category20c();
 
-  var isSoftBining = metricTitle.indexOf(this._defaultSBinName) === -1 ? false : true;
-  var isHardBining = metricTitle.indexOf(this._defaultHBinName) === -1 ? false : true;
+  var isSoftBining = metricField.indexOf(this._defaultSBinName) === -1 ? false : true;
+  var isHardBining = metricField.indexOf(this._defaultHBinName) === -1 ? false : true;
   var isBinning = (isSoftBining || isHardBining);
 
   var defaultSBColors = this._defaultSBColors;
