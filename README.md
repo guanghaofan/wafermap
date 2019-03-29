@@ -6,14 +6,16 @@
   - `single wafer binning map, supports customized soft/hard bin color, linear color, and ordinal colors.`
   - `yield of wafer/wafer lots, only supports linear color.`
   - `wafer/wafer lot parametric value map, only supports linear color.`
+  - `support chart types: SVG/Canvas and Plotly heatmap.`
   
 ## tips and limitations 
-  - `the x/y must be a positive number, the mapping type must be the Numberic`
+  - `the x/y must be a number, the mapping type must be the Numberic`
   - `the cell color metric should be also Numberic type, e.g. test value or bin number`
   - `Reverse Color and Color Schema are only for linear color type`
   - `user can modify the Default Axis Orientation[x/asc, y/des] in the kibana.yml`
   - `user need to config the hard/soft bin field name and hard/soft bin color mappings in the kibana.yml if they want to use the customized color`
   - `user can switch the chart type from SVG to Canvas to fast plot the big data size wafer maps`
+  
 ## example of kibana.yml for wafermap plugin configurations
   - `wafermap.defaultXAxisOrientation: "des"`
   - `wafermap.defaultYAxisOrientation: "asc"`
