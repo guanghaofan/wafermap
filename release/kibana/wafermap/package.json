@@ -1,0 +1,21 @@
+{
+  "name": "wafermap",
+  "version": "6.6.0",
+  "description": "wafer map",
+  "main": "index.js",
+  "kibana": {
+    "version": "6.6.0",
+    "templateVersion": "1.0.0"
+  },
+  "dependencies": {
+    "plotly.js": "1.45.3"
+  },
+  "build": {
+    "git": {
+      "count": "81",
+      "sha": "ac58264",
+      "date": "Fri, 29 Mar 2019 14:00:19 +0800"
+    },
+    "date": "Fri Mar 29 2019 14:51:24 GMT+0800 (China Standard Time)"
+  }
+}
