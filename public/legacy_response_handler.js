@@ -1,3 +1,12 @@
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.legacyResponseHandlerProvider = void 0;
+
+var _utilities = require("../../visualize/loader/pipeline_helpers/utilities");
+
 /*
  * Licensed to Elasticsearch B.V. under one or more contributor
  * license agreements. See the NOTICE file distributed with
@@ -17,83 +26,68 @@
  * under the License.
  */
 
-import { get, findLastIndex } from 'lodash';
-import AggConfigResult from 'ui/vis/agg_config_result';
-
 /**
- * Takes an array of tabified rows and splits them by column value:
- *
- * const rows = [
- *   { col-1: 'foo', col-2: 'X' },
- *   { col-1: 'bar', col-2: 50 },
- *   { col-1: 'baz', col-2: 'X' },
- * ];
- * const splitRows = splitRowsOnColumn(rows, 'col-2');
- * splitRows.results; // ['X', 50];
- * splitRows.rowsGroupedByResult; // { X: [{ col-1: 'foo' }, { col-1: 'baz' }], 50: [{ col-1: 'bar' }] }
+ * The LegacyResponseHandler is not registered as a response handler and can't be used
+ * as such anymore. Since the function itself is still used as a utility in the table
+ * function and the vislib response handler, we'll keep it for now.
+ * As soon as we have a new table implementation (https://github.com/elastic/kibana/issues/16639)
+ * we should move this over into or close to the vislib response handler as a pure utility
+ * function.
  */
-export function splitRowsOnColumn(rows, columnId) {
-  const resultsMap = {}; // Used to preserve types, since object keys are always converted to strings.
+var legacyResponseHandlerProvider = function legacyResponseHandlerProvider() {
   return {
-    rowsGroupedByResult: rows.reduce((acc, row) => {
-      const { [columnId]: splitValue, ...rest } = row;
-      resultsMap[splitValue] = splitValue;
-      acc[splitValue] = [...(acc[splitValue] || []), rest];
-      return acc;
-    }, {}),
-    results: Object.values(resultsMap),
+    name: 'legacy',
+    handler: function handler(table, dimensions) {
+      return new Promise(function (resolve) {
+        var converted = {
+          tables: []
+        };
+        var split = dimensions.splitColumn || dimensions.splitRow;
+
+        if (split) {
+          converted.direction = dimensions.splitRow ? 'row' : 'column';
+          var splitColumnIndex = split[0].accessor;
+          var splitColumnFormatter = (0, _utilities.getFormat)(split[0].format);
+          var splitColumn = table.columns[splitColumnIndex];
+          var splitMap = {};
+          var splitIndex = 0;
+          table.rows.forEach(function (row, rowIndex) {
+            var splitValue = row[splitColumn.id];
+
+            if (!splitMap.hasOwnProperty(splitValue)) {
+              splitMap[splitValue] = splitIndex++;
+              var tableGroup = {
+                $parent: converted,
+                title: "".concat(splitColumnFormatter.convert(splitValue), ": ").concat(splitColumn.name),
+                name: splitColumn.name,
+                key: splitValue,
+                column: splitColumnIndex,
+                row: rowIndex,
+                table: table,
+                tables: []
+              };
+              tableGroup.tables.push({
+                $parent: tableGroup,
+                columns: table.columns,
+                rows: []
+              });
+              converted.tables.push(tableGroup);
+            }
+
+            var tableIndex = splitMap[splitValue];
+            converted.tables[tableIndex].tables[0].rows.push(row);
+          });
+        } else {
+          converted.tables.push({
+            columns: table.columns,
+            rows: table.rows
+          });
+        }
+
+        resolve(converted);
+      });
+    }
   };
-}
+};
 
-export function splitTable(columns, rows, $parent) {
-  const splitColumn = columns.find(column => get(column, 'aggConfig.schema.name') === 'split');
-
-  if (!splitColumn) {
-    return [{
-      $parent,
-      columns: columns.map(column => ({ title: column.name, ...column })),
-      rows: rows.map(row => {
-        return columns.map(column => {
-          return new AggConfigResult(column.aggConfig, $parent, row[column.id], row[column.id]);
-        });
-      })
-    }];
-  }
-
-  const splitColumnIndex = columns.findIndex(column => column.id === splitColumn.id);
-  const splitRows = splitRowsOnColumn(rows, splitColumn.id);
-
-  // Check if there are buckets after the first metric.
-  const firstMetricsColumnIndex = columns.findIndex(column => get(column, 'aggConfig.type.type') === 'metrics');
-  const lastBucketsColumnIndex = findLastIndex(columns, column => get(column, 'aggConfig.type.type') === 'buckets');
-  const metricsAtAllLevels = firstMetricsColumnIndex < lastBucketsColumnIndex;
-
-  // Calculate metrics:bucket ratio.
-  const numberOfMetrics = columns.filter(column => get(column, 'aggConfig.type.type') === 'metrics').length;
-  const numberOfBuckets = columns.filter(column => get(column, 'aggConfig.type.type') === 'buckets').length;
-  const metricsPerBucket = numberOfMetrics / numberOfBuckets;
-
-  const filteredColumns = columns
-    .filter((column, i) => {
-      const isSplitColumn = i === splitColumnIndex;
-      const isSplitMetric = metricsAtAllLevels && i > splitColumnIndex && i <= splitColumnIndex + metricsPerBucket;
-      return !isSplitColumn && !isSplitMetric;
-    })
-    .map(column => ({ title: column.name, ...column }));
-
-  return splitRows.results.map(splitValue => {
-    const $newParent = new AggConfigResult(splitColumn.aggConfig, $parent, splitValue, splitValue);
-    return {
-      $parent: $newParent,
-      aggConfig: splitColumn.aggConfig,
-      title: `${splitColumn.aggConfig.fieldFormatter()(splitValue)}: ${splitColumn.aggConfig.makeLabel()}`,
-      key: splitValue,
-      // Recurse with filtered data to continue the search for additional split columns.
-      tables: splitTable(filteredColumns, splitRows.rowsGroupedByResult[splitValue], $newParent),
-    };
-  });
-}
-
-export async function legacyTableResponseHandler(table) {
-  return { tables: splitTable(table.columns, table.rows, null) };
-}
+exports.legacyResponseHandlerProvider = legacyResponseHandlerProvider;

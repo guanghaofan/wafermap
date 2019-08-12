@@ -79,8 +79,15 @@ class WaferMap extends EventEmitter {
     this._words = null;
     this._minZ = 0;
     this._maxZ = 1;
-    //this._xTitle = null;
-    //this._yTitle = null;
+    // titles
+    this._xTitle = null;
+    this._yTitle = null;
+    this._zTitle = null;
+    this._zName = null;
+    this._xOrder = null;
+    this._yOrder = null;
+    
+    
     this._row = null;
     this._series = false;
     this._showRowY = false;
@@ -88,6 +95,7 @@ class WaferMap extends EventEmitter {
     this._colorBucket = 9;
     //this._colors = new Array(this._colorBucket);
     this._colorRange = null;
+    this._colorLabel = null;
     //UTIL
     this._setTimeoutId = null;
     this._pendingJob = null;
@@ -102,6 +110,12 @@ class WaferMap extends EventEmitter {
 
     //color category
     this._colorCategory = {};
+    
+    // ids
+    this._xId = null;
+    this._yId = null;
+    this._zId = null;
+    this._splitId = null;
 
     //LAYOUT
     this._rowCnt = 1;
@@ -164,7 +178,7 @@ class WaferMap extends EventEmitter {
     this._significantFigures = options.significantFigure;
   }
 
-  setData(minZ, maxZ, x, y, data, row, series, colorCategory) {
+  setData(minZ, maxZ, x, y, data, row, series, colorCategory, xId, yId, zId, splitId, xTitle, yTitle, zTitle, zName, colorLabel, xOrder, yOrder) {
     //this._x = [];
     //this._y = [];
     this._minZ = minZ;
@@ -175,8 +189,21 @@ class WaferMap extends EventEmitter {
     this._row = row;
     this._series =series;
     this._colorBucket = (colorCategory === 2 ? 1 : 9);
-    //this._xTitle = xTitle;
-    //this._yTitle = yTitle;
+    this._xId = xId;
+    this._yId = yId;
+    this._zId = zId;
+    this._splitId = splitId;
+    
+    
+    this._xTitle = xTitle;
+    this._yTitle = yTitle;
+    this._zTitle = zTitle;
+    this._zName = zName;
+    
+    this._colorLabel = colorLabel;
+    
+    this._xOrder = xOrder;
+    this._yOrder = yOrder;
   }
 
   upateSVG() {
@@ -351,18 +378,18 @@ class WaferMap extends EventEmitter {
       var defaultAxisOrientation = this._defaultAxisOrientation;
 
       let tableNo = 0;
-      let metricTitle = this._series ? this._words[tableNo].tables["0"].columns[2].title : this._words[tableNo].columns[2].title;
-      let metricField = this._series ? this._words[tableNo].tables["0"].columns[2].aggConfig._opts.params.field : this._words[tableNo].columns[2].aggConfig._opts.params.field;
+      let metricTitle = this._zTitle;
+      let metricField = this._zName;
       if (metricField == null) {
         metricField = '';
       }
-      const xTitle = this._series ? this._words[tableNo].tables["0"].columns[0].title : this._words[tableNo].columns[0].title;
-      const yTitle = this._series ? this._words[tableNo].tables["0"].columns[1].title : this._words[tableNo].columns[1].title;
+      const xTitle = this._xTitle;
+      const yTitle = this._yTitle;
       const xIsAsc = (this._defaultXAxisOri === 'asc' ? true : false);
       const yIsDes = (this._defaultYAxisOri === 'des' ? true : false);
 
-      const xAxisOrientationDefault = (xTitle.indexOf('Asc') === -1) ? false : true;
-      const yAxisOrientationDefault = (yTitle.indexOf('Asc') === -1) ? true : false;
+      const xAxisOrientationDefault = (this._xOrder.indexOf('asc') === -1) ? false : true;
+      const yAxisOrientationDefault = (this._yOrder.indexOf('asc') === -1) ? true : false;
 
       let xTitleLength = xTitle.split(":")[0].length;
       let yTitleLength = yTitle.split(":")[0].length;
@@ -385,23 +412,6 @@ class WaferMap extends EventEmitter {
 		this._rowCnt = 1;
 	}
 	else {
-        //here add code to sort the table by number, need to check the split by bucket here
-        var ascend = true;
-        var isWafer = true;
-        if (this._words[0].title.indexOf('Asc') === -1) {
-          ascend = false;
-        }
-        if (this._words[0].title.indexOf('WaferNumber') === -1) {
-          isWafer = false;
-        }
-        if (this._words[0].aggConfig.params.orderBy == '_key') {
-          this._words.sort(function (a, b){
-            var numbera = + a.key;
-            var numberb = + b.key;
-            return ascend ? numbera > numberb : numberb > numbera;
-          });
-        }
-
 	      let colBasedTotalCnt = 0;
 	      let columnCnt = 0;
 	      let rowCnt = 0;
@@ -523,7 +533,7 @@ class WaferMap extends EventEmitter {
     };
     xGap = 5 / (this._element.offsetWidth - 50);
     yGap = 40 / (this._element.offsetHeight);
-    yDomainSize = (this._element.offsetHeight - (40 * this._rowCnt - 1)) / this._rowCnt / this._element.offsetHeight; 
+    yDomainSize = (this._element.offsetHeight - (40 * this._rowCnt - 1)) / this._rowCnt / this._element.offsetHeight;
   }
   else {
     if (xReversed) {
@@ -535,6 +545,10 @@ class WaferMap extends EventEmitter {
       yValues = this._y;
     }
   }
+  
+  var xId = this._xId;
+  var yId = this._yId;
+  var zId = this._zId;
 
   while (tableNo !== tableCnt) {
     let rowNo = Math.floor(tableNo / this._columnCnt);
@@ -589,7 +603,8 @@ class WaferMap extends EventEmitter {
           title: {text: this._series ? this._words[tableNo].title : '' },
           anchor: yaxis,
           showticklabels: rowNo === this._rowCnt - 1 ? true: false,
-          autorange: xReversed ? 'reversed' : ''
+          autorange: xReversed ? 'reversed' : '',
+          zeroline: false
         };
 
       if (layout['yaxis' + (rowNo + 1)] == null) {
@@ -601,7 +616,8 @@ class WaferMap extends EventEmitter {
           showgrid: false,
           domain: [yStart, yStart + yDomainSize],
           anchor: xaxis,
-          autorange: xReversed ? 'reversed' : ''
+          autorange: xReversed ? 'reversed' : '',
+          zeroline: false
         }
       }
 
@@ -609,21 +625,22 @@ class WaferMap extends EventEmitter {
         let xNo = 0;
         let zData = [];
         xValues.forEach(function(x){
-           let z = plotRows.find(function(row){
-            return (row[0].key === x && row[1].key === y);
+           let point = plotRows.find(function(row){
+            return (row[xId] === x && row[yId] === y);
           });
-          if(z == null){
+          if(point == null){
             zData[xNo] = null;
           }
           else{
-            zData[xNo] = z[2];
+            zData[xNo] = point[zId];
           }
           xNo ++;
         });
         plot_z[yNo] = zData;
         yNo ++;
       });
-
+      let colorTitle = this._colorLabel;
+      let colorbar = tableNo === 0 ? {title: {text: colorTitle}} : {};
       let data = {
         x: xValues,
         y: yValues,
@@ -633,6 +650,7 @@ class WaferMap extends EventEmitter {
         type: 'heatmap',
         xgap: 1,
         ygap: 1,
+        colorbar: colorbar,
 
         colorscale: plotyColorScale,
         zmin: this._minZ,
@@ -651,13 +669,13 @@ class WaferMap extends EventEmitter {
         var y = lty + (maxY + 1 + spaceCellCnt / 2) * cellHeight;
         var opacity = cellWidth >= 30 ? 1 : cellWidth >= 20 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;
         if(opacity === 1){
-          drawText(context, d, x, y, '10 10px Roboto, sans-serif');
+          drawText(context, d, x, y, '10 9px Roboto, sans-serif');
         }
       });
       var yCoordTitle = lty + chartHeight -this._marginNeighbor;
       yCoordTitle = cellHeight < 10 ? yCoordTitle + 8 : yCoordTitle;
       if (this._series) {
-        drawText(this._context, this._words[tableNo].title, ltx + (maxX + 1)* cellWidth / 2, yCoordTitle, '10 10px Roboto, sans-serif');
+        drawText(this._context, this._words[tableNo].title, ltx + (maxX + 1)* cellWidth / 2, yCoordTitle, '10 9px Roboto, sans-serif');
       }
 
       if (tableNo % this._columnCnt === 0) {
@@ -666,7 +684,7 @@ class WaferMap extends EventEmitter {
           var x = 0 - 5;
           var opacity = cellHeight >= 30 ? 1 : cellHeight >= 20 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;
           if(opacity === 1) {
-            drawText(context, d, x, y, '10 10px Roboto, sans-serif');
+            drawText(context, d, x, y, '10 9px Roboto, sans-serif');
           }
         });
       }
@@ -676,17 +694,17 @@ class WaferMap extends EventEmitter {
       var showLabel = this._showLabel;
       var nextCol = this._nextCol;
       data.forEach(function(d) {
-      
-        let i = xValues.indexOf(d[0] + 0);
+
+        let i = xValues.indexOf(d[xId] + 0);
         let x = (i * cellWidth + ltx);
-        i = yValues.length - yValues.indexOf(d[1] + 0) - 1;
+        i = yValues.length - yValues.indexOf(d[yId] + 0) - 1;
         let y = (i * cellHeight + lty);
 
         // color
         let cellColor = 'RGB(0,0,0)';
         let colorNo = 0;
         if (isOrdinal) {
-          colorNo = getOrdinalColor(d[2], colorCategory);
+          colorNo = getOrdinalColor(d[zId], colorCategory);
           colorScale = d3.scale.category20();
           if (colorNo <= 19) {
             colorScale = colorScale20;
@@ -702,8 +720,8 @@ class WaferMap extends EventEmitter {
         }
 
         if (isCustomziedBinning) {
-          colorNo = getOrdinalColor(d[2], colorCategory);
-          var binColor = isSoftBining ? defaultSBColors.get(d[2]) : defaultHBColors.get(d[2]);
+          colorNo = getOrdinalColor(d[zId], colorCategory);
+          var binColor = isSoftBining ? defaultSBColors.get(d[zId]) : defaultHBColors.get(d[zId]);
           if (binColor == null) {
           }
           else{
@@ -711,7 +729,7 @@ class WaferMap extends EventEmitter {
           }
         }
         else {
-          cellColor = isOrdinal ? colorScale(colorNo) : colorScale(reverseColor ? 1 -  colorDomain(d[2]) : colorDomain(d[2]));
+          cellColor = isOrdinal ? colorScale(colorNo) : colorScale(reverseColor ? 1 -  colorDomain(d[zId]) : colorDomain(d[zId]));
         }
 
 
@@ -731,7 +749,8 @@ class WaferMap extends EventEmitter {
         context.closePath();
         //drawLabelText(context, virtualColor, x, y, cellWidth, cellHeight, '400 14px Roboto, sans-serif');
         if (showLabel) {
-          drawLabelText(context, d[2], x, y, cellWidth, cellHeight, '400 14px Roboto, sans-serif');
+          let fontSize = cellWidth > 50 ? '400 14px Roboto, sans-serif' : cellWidth > 40 ? '400 12px Roboto, sans-serif' : cellWidth > 30 ? '400 10px Roboto, sans-serif' : '400 8px Roboto, sans-serif'; 
+          drawLabelText(context, d[zId], x, y, cellWidth, cellHeight, fontSize);
         }
 
         console.log("x= " + x + ", y = " +y);
@@ -758,9 +777,9 @@ class WaferMap extends EventEmitter {
           if(nodeData != null) {
 
             console.log(colKey + "," + nodeData);
-            tooltip.html(metricTitle + '&nbsp;' + nodeData[2]
-                  + "<br/>"  + _xTitle + '&nbsp;' + nodeData[0]
-                  + "<br/>"  + _yTitle + '&nbsp;' + nodeData[1]
+            tooltip.html(metricTitle + '&nbsp;' + nodeData[zId]
+                  + "<br/>"  + _xTitle + '&nbsp;' + nodeData[xId]
+                  + "<br/>"  + _yTitle + '&nbsp;' + nodeData[yId]
                   + seriesTitle
                  )
                  //.style("left", (d3.mouse(this)[0] + (d[0] < maxX / 2 ? -100 : 60)) + "px")
@@ -867,11 +886,11 @@ class WaferMap extends EventEmitter {
 
         var map = rectangles.append("rect")
            .attr("x", function (d) {
-            let i = xValues.indexOf(d[0] + 0);
+            let i = xValues.indexOf(d[xId] + 0);
              return (i * cellWidth + ltx);
            })
            .attr("y", function(d) {
-            let i = yValues.length - yValues.indexOf(d[1] + 0) - 1;
+            let i = yValues.length - yValues.indexOf(d[yId] + 0) - 1;
             return (i * cellHeight + lty);
            })
 
@@ -880,7 +899,7 @@ class WaferMap extends EventEmitter {
           .attr('fill', function(d) {
             var colorNo = 0;
             if (isOrdinal) {
-              colorNo = getOrdinalColor(d[2], colorCategory);
+              colorNo = getOrdinalColor(d[zId], colorCategory);
               colorScale = d3.scale.category20();
               if (colorNo <= 19) {
                 colorScale = colorScale20;
@@ -896,21 +915,21 @@ class WaferMap extends EventEmitter {
             }
 
             if (isCustomziedBinning) {
-              colorNo = getOrdinalColor(d[2], colorCategory);
-              var binColor = isSoftBining ? defaultSBColors.get(d[2]) : defaultHBColors.get(d[2]);
+              colorNo = getOrdinalColor(d[zId], colorCategory);
+              var binColor = isSoftBining ? defaultSBColors.get(d[zId]) : defaultHBColors.get(d[zId]);
               if (binColor == null) {
                 return 'RGB(0,0,0)';
               }
               return binColor;
             }
             else {
-              return isOrdinal ? colorScale(colorNo) : colorScale(reverseColor ? 1 -  colorDomain(d[2]) : colorDomain(d[2]));
+              return isOrdinal ? colorScale(colorNo) : colorScale(reverseColor ? 1 -  colorDomain(d[zId]) : colorDomain(d[zId]));
             }
           });
           if (this._showLabel) {
             rectangles.append('text')
             .text(function (d) {
-              return d[2];
+              return d[zId];
             })
             .style('display', function (d) {
               const textLength = this.getBBox().width;
@@ -922,14 +941,17 @@ class WaferMap extends EventEmitter {
             .style('dominant-baseline', 'central')
             .style('text-anchor', 'middle')
             .style('fill', '#000000')
+            .style('font-size', function (d) {
+              return cellWidth > 50 ? '1.0em' : cellWidth > 40 ? '0.8em': cellWidth > 30 ? '0.6em' : '0.4em'; 
+            })
             .attr("x", function (d) {
-              let i = xValues.indexOf(d[0] + 0) + 0.5;
-              console.log('x= ' + d[0] + ": " + i * cellWidth + ltx);
+              let i = xValues.indexOf(d[xId] + 0) + 0.5;
+              console.log('x= ' + d[xId] + ": " + i * cellWidth + ltx);
               return (i * cellWidth + ltx);
             })
             .attr("y", function(d, i) {
-              i = yValues.length - yValues.indexOf(d[1] + 0) - 0.5;
-              console.log('y = ' + d[1] + ': '+ (i * cellHeight + lty) + ", z= " + d[2]);
+              i = yValues.length - yValues.indexOf(d[yId] + 0) - 0.5;
+              console.log('y = ' + d[yId] + ': '+ (i * cellHeight + lty) + ", z= " + d[zId]);
               return (i * cellHeight + lty);
             });
           }
@@ -937,13 +959,13 @@ class WaferMap extends EventEmitter {
 
           map.on("mouseover", function(d) {
              d3.select(this).classed("cell-hover",true);
-                tooltip.html(metricTitle + '&nbsp;' + d[2]
-                  + "<br/>"  + _xTitle + '&nbsp;' + d[0]
-                  + "<br/>"  + _yTitle + '&nbsp;' + d[1]
+                tooltip.html(metricTitle + '&nbsp;' + d[zId]
+                  + "<br/>"  + _xTitle + '&nbsp;' + d[xId]
+                  + "<br/>"  + _yTitle + '&nbsp;' + d[yId]
                   + seriesTitle
                  )
-                 .style("left", (d3.mouse(this)[0] + (d[0] < maxX / 2 ? -100 : 60)) + "px")
-                 .style("top", (d3.mouse(this)[1] + (d[1] < maxY / 2 ? -100 : 60)) + "px")
+                 .style("left", (d3.mouse(this)[0] + (d[xId] < maxX / 2 ? -100 : 60)) + "px")
+                 .style("top", (d3.mouse(this)[1] + (d[yId] < maxY / 2 ? -100 : 60)) + "px")
 
                  .style("opacity", enableToolTip ? 1 : 0)
                 ;
@@ -1000,7 +1022,7 @@ class WaferMap extends EventEmitter {
             y = (i + 1) * legendHeight;
             var lgColor;
               if (isOrdinal) {
-                var i = d[0];
+                var i = d[xId];
                 if (i <= 19) {
                   colorScale = colorScale20;
                 }
@@ -1015,7 +1037,7 @@ class WaferMap extends EventEmitter {
               }
 
               if (isCustomziedBinning) {
-                var binColor = isSoftBining ? defaultSBColors.get(d[1]) : defaultHBColors.get(d[1]);
+                var binColor = isSoftBining ? defaultSBColors.get(d[1]) : defaultHBColors.get(d[yId]);
                   if (binColor == null) {
                     lgColor = 'RGB(0,0,0)';
                   }
@@ -1031,7 +1053,7 @@ class WaferMap extends EventEmitter {
             context.fillRect(x + 2, y, legendWidth, legendHeight - 1);
             context.closePath();
           });
-          var title = this._series ? this._words[0].tables["0"].columns[2].title : this._words[0].columns[2].title;
+          var title = this._colorLabel;
           x = this._element.offsetWidth - this._marginLeft - 10;
           y = legendHeight - 15;
           drawLegendTitle(context, title, x, y, '400 14px Roboto, sans-serif');
@@ -1057,9 +1079,11 @@ class WaferMap extends EventEmitter {
 
 
           var legendTitle = this._svgGroup.append("text")
-            .text(this._series ? this._words[0].tables["0"].columns[2].title : this._words[0].columns[2].title)
+            .text(this._colorLabel)
             .attr("x", this._element.offsetWidth - this._marginLeft - 10)
             .attr("y", legendHeight - 15)
+            .style('font-size', '0.9em')
+            .style('font-weight', '400')
             .style("text-anchor", "end");
 
 

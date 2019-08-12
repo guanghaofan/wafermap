@@ -17,10 +17,15 @@ export class WaferMapVisualization {
 
   constructor(node, vis) {
     this._containerNode = node;
+    const cloudRelativeContainer = document.createElement('div');
+    cloudRelativeContainer.classList.add('wafermap-vis');
+    cloudRelativeContainer.setAttribute('style', 'position: relative');
 
     const cloudContainer = document.createElement('div');
     cloudContainer.classList.add('wafermap-vis');
-    this._containerNode.appendChild(cloudContainer);
+    this._containerNode.classList.add('visChart--vertical');
+    cloudRelativeContainer.appendChild(cloudContainer);
+    this._containerNode.appendChild(cloudRelativeContainer);
 
     // filed format
     this._fieldFormat = null;
@@ -74,9 +79,13 @@ export class WaferMapVisualization {
     this._mapWidth = 5;
     this._maxX = 1;
     this._maxY = 1;
+    this._xId = null;
+    this._yId = null;
+    this._zId = null;
+    this._splitId = null;
   }
 
-  async render(data, status) {
+  async render(data, visParams, status) {
     //reset the feedbacks
     this._isErrorBucket = false;
     this._isSmallSize = false;
@@ -189,7 +198,7 @@ export class WaferMapVisualization {
       return false;
     }
 
-    if (this._series && response.tables[0].tables["0"].columns.length === 3) {
+    if (this._series && response.tables[0].tables["0"].columns.length === 4) {
     }
     else if ((!this._series) && response.tables[0].columns.length === 3) {
     }
@@ -222,18 +231,48 @@ export class WaferMapVisualization {
       return Math.round(num) === num ? num : num.toFixed(3);
     }
     var category = [];
-
+    
+    var xConfig = this._vis.aggs.find(aggConfig=> aggConfig._opts.schema === 'x-coord');
+    var yConfig = this._vis.aggs.find(aggConfig=> aggConfig._opts.schema === 'y-coord');
+    var zConfig = this._vis.aggs.find(aggConfig=> aggConfig.type.type === 'metrics');
+    
+    let zField = zConfig.fieldName()
+    
+    
+    let zName = zConfig.makeLabel();
+    let xName = xConfig.params.customLabel ? xConfig.params.customLabel : xConfig.getField().name;
+    let yName = yConfig.params.customLabel ? yConfig.params.customLabel : yConfig.getField().name;
+    xName = xConfig.makeLabel();
+    yName = yConfig.makeLabel();
+    
+    let colorLabel = this._vis.aggs.find(aggConfig=> aggConfig.type.type === 'metrics').__type.title;
+    if(colorLabel != 'Count'){
+      colorLabel +=  " " + zField;
+    }
+    colorLabel = zConfig.makeLabel();
+    
+    let splitName = '';
+    if(this._series){
+      splitName = this._vis.aggs.find(aggConfig=> aggConfig._opts.schema === 'split').params.customLabel;
+      splitName = this._vis.aggs.find(aggConfig=> aggConfig._opts.schema === 'split').makeLabel();
+    }
+    
+    let xOrder = this._vis.aggs.find(aggConfig=> aggConfig._opts.schema === 'x-coord').params.order.value;
+    let yOrder = this._vis.aggs.find(aggConfig=> aggConfig._opts.schema === 'y-coord').params.order.value;
 
     while (tableNo !== this._tableCnt) {
       let chartData;
+      let columns;
       if (this._tableCnt > 1 || this._series) {
         var temp  = response.tables[tableNo].tables["0"];
         chartData = temp.rows;
+        columns = temp.columns;
+        
         if (chartData.length ===0 || temp.columns.length ===0) {
           this._isEmptyData = true;
           return;
         }
-        var metricAgg = this._vis.aggs.find(aggConfig=> aggConfig.id === temp.columns[2].aggConfig.id);
+        var metricAgg = this._vis.aggs.find(aggConfig=> aggConfig.type.type === 'metrics');
         this._fieldFormat = metricAgg.type && metricAgg.type.getFormat(metricAgg);
         if (!this._fieldFormat) {
            this._fieldFormat =  _field_formats.fieldFormats.getDefaultInstance('number');
@@ -244,12 +283,13 @@ export class WaferMapVisualization {
       }
       else {
         chartData = response.tables[tableNo].rows;
+        columns = response.tables[tableNo].columns;
         if (chartData.length === 0 || response.tables[tableNo].columns.length ===0) {
           // there's no x or no y data
           this._isEmptyData = true;
           return;
         }
-        var metricAgg = this._vis.aggs.find(aggConfig=> aggConfig.id === response.tables[tableNo].columns[2].aggConfig.id);
+        var metricAgg = this._vis.aggs.find(aggConfig=> aggConfig.type.type === 'metrics');
         this._fieldFormat = metricAgg.type && metricAgg.type.getFormat(metricAgg);
         if (!this._fieldFormat) {
           this._fieldFormat =  _field_formats.fieldFormats.getDefaultInstance('number');
@@ -259,31 +299,44 @@ export class WaferMapVisualization {
       if (typeof chartData[0][2] === 'string') {
         return;
       }
+      
+      // map the xId/yId/zId/splitId to the response table columns
+      this._xId = columns.find(column=> column.name === xName).id;
+      this._yId = columns.find(column=> column.name === yName).id;
+      this._zId = columns.find(column=> column.name === zName).id;
+      if(this._series){
+        this._splitId = columns.find(column=> column.name === splitName).id;
+      }
+      
 
 
       let rowNo = 0;
       let columnNo =0;
       const rowCnt = chartData.length;
       while (rowNo != rowCnt) {
-        maxX = (maxX < chartData[rowNo][0] ? chartData[rowNo][0] : maxX);
-        maxY = (maxY < chartData[rowNo][1] ? chartData[rowNo][1] : maxY);
-        minX = (minX > chartData[rowNo][0] ? chartData[rowNo][0] : minX);
-        minY = (minY > chartData[rowNo][1] ? chartData[rowNo][1] : minY);
+        let x = chartData[rowNo][this._xId];
+        let y = chartData[rowNo][this._yId];
+        let z = chartData[rowNo][this._zId];
+        
+        maxX = (maxX < x ? x : maxX);
+        maxY = (maxY < y ? y : maxY);
+        minX = (minX > x ? x : minX);
+        minY = (minY > y ? y : minY);
 
         if (tableNo ===0 && rowNo === 0) {
-          var floatData = 0.0 + chartData[rowNo][2];
+          var floatData = 0.0 + z;
           minZ = floatData;
           maxZ = minZ;
           chartData[rowNo][2] = this._fieldFormat.getConverterFor('text')(floatData, null, null, null).replace(',', '');
         }
         else {
-          var floatData = 0.0 + chartData[rowNo][2];
+          var floatData = 0.0 + z;
           maxZ = (maxZ < floatData ? floatData : maxZ);
           minZ = (minZ > floatData ? floatData : minZ);
           chartData[rowNo][2] = this._fieldFormat.getConverterFor('text')(floatData, null, null, null).replace(',', '');
         }
         if (category && category.length < 3) {
-          if (!category.includes(chartData[rowNo][2])) {
+          if (!category.includes(z)) {
             category.push(chartData[rowNo][2]);
           }
         }
@@ -291,6 +344,9 @@ export class WaferMapVisualization {
       }
       tableNo++;
     }
+    
+    
+    
     minZ = parseFloat (this._fieldFormat.getConverterFor('text')(minZ, null, null, null).replace(',', ''));
     maxZ = parseFloat (this._fieldFormat.getConverterFor('text')(maxZ, null, null, null).replace(',', ''));
     this._maxX = maxX + 1;
@@ -321,6 +377,6 @@ export class WaferMapVisualization {
         x[columnNo - minX] = columnNo;
         columnNo++;
       }
-    this._waferMap.setData(minZ, maxZ, x, y, response.tables, this._row, this._series, category.length);
+    this._waferMap.setData(minZ, maxZ, x, y, response.tables, this._row, this._series, category.length, this._xId, this._yId, this._zId, this._splitId, xName, yName, zName, zField, colorLabel, xOrder, yOrder);
   }
 }

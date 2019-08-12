@@ -7,10 +7,11 @@ import { WaferMapVisualization } from './wafer_map_visualization';
 import { VisTypesRegistryProvider } from 'ui/registry/vis_types';
 import image from './images/icon-wafermap.svg';
 import { Status } from 'ui/vis/update_status';
-import { legacyTableResponseHandler } from './legacy_response_handler';
+import { legacyResponseHandlerProvider } from './legacy';
+//import { legacyResponseHandlerProvider } from 'ui/vis/response_handlers/legacy';
 
 VisTypesRegistryProvider.register(function (Private) {
-
+  const legacyTableResponseHandler = legacyResponseHandlerProvider().handler;
   const VisFactory = Private(VisFactoryProvider);
 
   return VisFactory.createBaseVisualization({
