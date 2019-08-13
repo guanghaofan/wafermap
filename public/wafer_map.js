@@ -664,10 +664,16 @@ class WaferMap extends EventEmitter {
 
     }
     else if(this._isCanvas) {
+      
       xValues.forEach(function(d, i){
         var x = (i + 0.5) * cellWidth + ltx;
         var y = lty + (maxY + 1 + spaceCellCnt / 2) * cellHeight;
-        var opacity = cellWidth >= 30 ? 1 : cellWidth >= 20 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;
+        
+        var opacity = cellWidth >= 20 ? 1 : cellWidth >= 10 ? (d + 3) % 2 : cellWidth >= 8 ? ((d + 3) % 3 === 0 ? 1 : 0) : (d + 4) % 4 === 0 ? 1 : 0;
+        // always show the last item
+        if(i === xValues.length + 1) {
+          opacity = 1;
+        }
         if(opacity === 1){
           drawText(context, d, x, y, '10 9px Roboto, sans-serif');
         }
@@ -682,8 +688,12 @@ class WaferMap extends EventEmitter {
         yValues.forEach(function(d, i){
           var y = (yValues.length - i - 1 + 0.5) * cellHeight + lty;
           var x = 0 - 5;
-          var opacity = cellHeight >= 30 ? 1 : cellHeight >= 20 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;
-          if(opacity === 1) {
+          var opacity = cellHeight >= 20 ? 1 : cellHeight >= 10 ? (d + 3) % 2 : cellHeight >= 8 ? ((d + 3) % 3 === 0 ? 1 : 0) : (d + 4) % 4 === 0 ? 1 : 0;
+          
+          if(i === yValues.length + 1) {
+            opacity = 1;
+          }
+          if(opacity === 1){
             drawText(context, d, x, y, '10 9px Roboto, sans-serif');
           }
         });
@@ -749,7 +759,7 @@ class WaferMap extends EventEmitter {
         context.closePath();
         //drawLabelText(context, virtualColor, x, y, cellWidth, cellHeight, '400 14px Roboto, sans-serif');
         if (showLabel) {
-          let fontSize = cellWidth > 50 ? '400 14px Roboto, sans-serif' : cellWidth > 40 ? '400 12px Roboto, sans-serif' : cellWidth > 30 ? '400 10px Roboto, sans-serif' : '400 8px Roboto, sans-serif'; 
+          let fontSize = cellWidth > 50 ? '300 14px Roboto, sans-serif' : cellWidth > 40 ? '300 12px Roboto, sans-serif' : cellWidth > 30 ? '300 10px Roboto, sans-serif' : '300 8px Roboto, sans-serif'; 
           drawLabelText(context, d[zId], x, y, cellWidth, cellHeight, fontSize);
         }
 

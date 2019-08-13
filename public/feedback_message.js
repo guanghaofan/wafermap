@@ -29,7 +29,7 @@ export class FeedbackMessage extends Component {
                 />
               </p>
             }
-            {this.state.shouldShowIncomplete &&
+            {this.state.shouldShowInvalidBucketCnt &&
               <p>
                 <FormattedMessage
                   id="tagCloud.feedbackMessage.tooSmallContainerDescription"
