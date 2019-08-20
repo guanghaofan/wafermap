@@ -535,16 +535,16 @@ class WaferMap extends EventEmitter {
     yGap = 40 / (this._element.offsetHeight);
     yDomainSize = (this._element.offsetHeight - (40 * this._rowCnt - 1)) / this._rowCnt / this._element.offsetHeight;
   }
-  else {
-    if (xReversed) {
-      this._x.sort(function(a,b){return b - a});
-      xValues = this._x;
-    }
-    if (yReversed) {
-      this._y.sort(function(a,b){return b - a});
-      yValues = this._y;
-    }
+  
+  if (xReversed) {
+    this._x.sort(function(a,b){return b - a});
+    xValues = this._x;
   }
+  if (yReversed) {
+    this._y.sort(function(a,b){return b - a});
+    yValues = this._y;
+  }
+  
   
   var xId = this._xId;
   var yId = this._yId;
@@ -597,13 +597,13 @@ class WaferMap extends EventEmitter {
         layout['xaxis' + (tableNo + 1)] = {
           ticks: '',
           side: 'bottom',
-          //type: 'category',
+          type: 'category',
           showgrid: false,
           domain: [1/this._columnCnt * columnNo, 1/this._columnCnt * (columnNo + 1) - xGap],
           title: {text: this._series ? this._words[tableNo].title : '' },
           anchor: yaxis,
           showticklabels: rowNo === this._rowCnt - 1 ? true: false,
-          autorange: xReversed ? 'reversed' : '',
+          //autorange: xReversed ? 'reversed' : '',
           zeroline: false
         };
 
@@ -612,11 +612,11 @@ class WaferMap extends EventEmitter {
           ticks: '',
           ticksuffix: ' ',
           autosize: false,
-          //type: 'category',
+          type: 'category',
           showgrid: false,
           domain: [yStart, yStart + yDomainSize],
           anchor: xaxis,
-          autorange: xReversed ? 'reversed' : '',
+          //autorange: xReversed ? 'reversed' : '',
           zeroline: false
         }
       }
