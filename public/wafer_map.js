@@ -549,6 +549,8 @@ class WaferMap extends EventEmitter {
   var xId = this._xId;
   var yId = this._yId;
   var zId = this._zId;
+  
+  var showLabel = this._showLabel;
 
   while (tableNo !== tableCnt) {
     let rowNo = Math.floor(tableNo / this._columnCnt);
@@ -660,6 +662,38 @@ class WaferMap extends EventEmitter {
         reversescale: this._reverseColor
       };
       traces[traces.length] = data;
+      
+      // add the annoated text
+      if (showLabel) {
+        for ( var i = 0; i < yValues.length; i++ ) {
+          for ( var j = 0; j < xValues.length; j++ ) {
+            var currentValue = plot_z[i][j];
+            if (currentValue != 0.0) {
+              var textColor = 'white';
+            }else{
+              var textColor = 'black';
+            }
+            var result = {
+              xref: xaxis,
+              yref: yaxis,
+              x: xValues[j],
+              y: yValues[i],
+              text: plot_z[i][j],
+              font: {
+                family: 'Arial',
+                size: 12,
+                color: 'rgb(50, 171, 196)'
+              },
+              showarrow: false,
+              font: {
+                color: textColor
+              }
+            };
+            layout.annotations.push(result);
+            
+          }
+        }
+      }
 
 
     }
@@ -701,7 +735,6 @@ class WaferMap extends EventEmitter {
 
       var data = this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows;
 
-      var showLabel = this._showLabel;
       var nextCol = this._nextCol;
       data.forEach(function(d) {
 
