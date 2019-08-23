@@ -1,10 +1,10 @@
 {
   "name": "wafermap",
-  "version": "7.3.0",
+  "version": "7.3.x",
   "description": "wafer map",
   "main": "index.js",
   "kibana": {
-    "version": "7.2.1",
+    "version": "7.3.0",
     "templateVersion": "1.0.0"
   },
   "scripts": {
