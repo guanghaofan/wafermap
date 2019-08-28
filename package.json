@@ -4,7 +4,7 @@
   "description": "wafer map",
   "main": "index.js",
   "kibana": {
-    "version": "6.6.0",
+    "version": "kibana",
     "templateVersion": "1.0.0"
   },
   "scripts": {
@@ -31,7 +31,7 @@
     "expect.js": "^0.3.1"
   },
   "dependencies": {
-    "plotly.js": "1.45.3"
+    "plotly.js": "1.49.2"
   }
 
 }
