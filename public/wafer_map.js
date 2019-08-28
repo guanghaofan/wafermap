@@ -628,6 +628,7 @@ class WaferMap extends EventEmitter {
       };
       traces[traces.length] = data;
 	  // add the annoated text
+	  let fontSize = cellWidth > 50 ? '14' : cellWidth > 40 ? '12' : cellWidth > 30 ? '10' : '8';
       if (showLabel) {
         for ( var i = 0; i < yValues.length; i++ ) {
           for ( var j = 0; j < xValues.length; j++ ) {
