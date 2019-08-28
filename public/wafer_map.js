@@ -506,9 +506,9 @@ class WaferMap extends EventEmitter {
     };
     xGap = 5 / (this._element.offsetWidth - 50);
     yGap = 40 / (this._element.offsetHeight);
-    yDomainSize = (this._element.offsetHeight - (40 * this._rowCnt - 1)) / this._rowCnt / this._element.offsetHeight; 
+    yDomainSize = (this._element.offsetHeight - (40 * this._rowCnt - 1)) / this._rowCnt / this._element.offsetHeight;
   }
- 
+
 	if (xReversed) {
 	  this._x.sort(function(a,b){return b - a});
 	  xValues = this._x;
@@ -628,11 +628,14 @@ class WaferMap extends EventEmitter {
       };
       traces[traces.length] = data;
 	  // add the annoated text
-	  let fontSize = cellWidth > 50 ? '14' : cellWidth > 40 ? '12' : cellWidth > 30 ? '10' : '8';
+	  let fontSize = cellWidth > 50 ? 20 : cellWidth > 40 ? 18 : cellWidth > 30 ? 15 : 8;
       if (showLabel) {
         for ( var i = 0; i < yValues.length; i++ ) {
           for ( var j = 0; j < xValues.length; j++ ) {
             var currentValue = plot_z[i][j];
+            if(currentValue == null) {
+              continue;
+            }
             if (currentValue != 0.0) {
               var textColor = 'white';
             }else{
@@ -646,16 +649,16 @@ class WaferMap extends EventEmitter {
               text: plot_z[i][j],
               font: {
                 family: 'Arial',
-                size: 12,
                 color: 'rgb(50, 171, 196)'
               },
               showarrow: false,
               font: {
-                color: textColor
+                color: textColor,
+                size: fontSize
               }
             };
             layout.annotations.push(result);
-            
+
           }
         }
       }
@@ -674,7 +677,7 @@ class WaferMap extends EventEmitter {
         if(opacity === 1){
           drawText(context, d, x, y, '10 9px Roboto, sans-serif');
         }
-		
+
       });
       var yCoordTitle = lty + chartHeight -this._marginNeighbor;
       yCoordTitle = cellHeight < 10 ? yCoordTitle + 8 : yCoordTitle;
@@ -687,7 +690,7 @@ class WaferMap extends EventEmitter {
           var y = (yValues.length - i - 1 + 0.5) * cellHeight + lty;
           var x = 0 - 5;
           var opacity = cellHeight >= 20 ? 1 : cellHeight >= 10 ? (d + 3) % 2 : cellHeight >= 8 ? ((d + 3) % 3 === 0 ? 1 : 0) : (d + 4) % 4 === 0 ? 1 : 0;
-          
+
           if(i === yValues.length + 1) {
             opacity = 1;
           }
@@ -699,10 +702,10 @@ class WaferMap extends EventEmitter {
 
       var data = this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows;
 
-      
+
       var nextCol = this._nextCol;
       data.forEach(function(d) {
-      
+
         let i = xValues.indexOf(d[0] + 0);
         let x = (i * cellWidth + ltx);
         i = yValues.length - yValues.indexOf(d[1] + 0) - 1;
@@ -757,7 +760,7 @@ class WaferMap extends EventEmitter {
         context.closePath();
         //drawLabelText(context, virtualColor, x, y, cellWidth, cellHeight, '400 14px Roboto, sans-serif');
         if (showLabel) {
-		  let fontSize = cellWidth > 50 ? '300 14px Roboto, sans-serif' : cellWidth > 40 ? '300 12px Roboto, sans-serif' : cellWidth > 30 ? '300 10px Roboto, sans-serif' : '300 8px Roboto, sans-serif'; 
+		  let fontSize = cellWidth > 50 ? '300 14px Roboto, sans-serif' : cellWidth > 40 ? '300 12px Roboto, sans-serif' : cellWidth > 30 ? '300 10px Roboto, sans-serif' : '300 8px Roboto, sans-serif';
           drawLabelText(context, d[2], x, y, cellWidth, cellHeight, fontSize);
         }
 
@@ -950,7 +953,7 @@ class WaferMap extends EventEmitter {
             .style('text-anchor', 'middle')
             .style('fill', '#000000')
 			.style('font-size', function (d) {
-              return cellWidth > 50 ? '1.0em' : cellWidth > 40 ? '0.8em': cellWidth > 30 ? '0.6em' : '0.4em'; 
+              return cellWidth > 50 ? '1.0em' : cellWidth > 40 ? '0.8em': cellWidth > 30 ? '0.6em' : '0.4em';
             })
             .attr("x", function (d) {
               let i = xValues.indexOf(d[0] + 0) + 0.5;
