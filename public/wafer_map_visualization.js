@@ -3,7 +3,6 @@ import * as Rx from 'rxjs';
 import { take } from 'rxjs/operators';
 import { render, unmountComponentAtNode } from 'react-dom';
 import React from 'react';
-import { getFormat } from 'ui/visualize/loader/pipeline_helpers/utilities';
 
 var _field_formats = require('ui/registry/field_formats');
 
@@ -77,7 +76,7 @@ export class WaferMapVisualization {
     this._maxY = 1;
   }
 
-  async render(data, visParams, status) {
+  async render(data, status) {
     //reset the feedbacks
     this._isErrorBucket = false;
     this._isSmallSize = false;
