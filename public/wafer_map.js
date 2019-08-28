@@ -385,23 +385,6 @@ class WaferMap extends EventEmitter {
 		this._rowCnt = 1;
 	}
 	else {
-        //here add code to sort the table by number, need to check the split by bucket here
-        var ascend = true;
-        var isWafer = true;
-        if (this._words[0].title.indexOf('Asc') === -1) {
-          ascend = false;
-        }
-        if (this._words[0].title.indexOf('WaferNumber') === -1) {
-          isWafer = false;
-        }
-        if (this._words[0].aggConfig.params.orderBy == '_key') {
-          this._words.sort(function (a, b){
-            var numbera = + a.key;
-            var numberb = + b.key;
-            return ascend ? numbera > numberb : numberb > numbera;
-          });
-        }
-
 	      let colBasedTotalCnt = 0;
 	      let columnCnt = 0;
 	      let rowCnt = 0;
@@ -525,16 +508,16 @@ class WaferMap extends EventEmitter {
     yGap = 40 / (this._element.offsetHeight);
     yDomainSize = (this._element.offsetHeight - (40 * this._rowCnt - 1)) / this._rowCnt / this._element.offsetHeight; 
   }
-  else {
-    if (xReversed) {
-      this._x.sort(function(a,b){return b - a});
-      xValues = this._x;
-    }
-    if (yReversed) {
-      this._y.sort(function(a,b){return b - a});
-      yValues = this._y;
-    }
-  }
+ 
+	if (xReversed) {
+	  this._x.sort(function(a,b){return b - a});
+	  xValues = this._x;
+	}
+	if (yReversed) {
+	  this._y.sort(function(a,b){return b - a});
+	  yValues = this._y;
+	}
+    var showLabel = this._showLabel;
 
   while (tableNo !== tableCnt) {
     let rowNo = Math.floor(tableNo / this._columnCnt);
@@ -583,13 +566,14 @@ class WaferMap extends EventEmitter {
         layout['xaxis' + (tableNo + 1)] = {
           ticks: '',
           side: 'bottom',
-          //type: 'category',
+          type: 'category',
           showgrid: false,
           domain: [1/this._columnCnt * columnNo, 1/this._columnCnt * (columnNo + 1) - xGap],
           title: {text: this._series ? this._words[tableNo].title : '' },
           anchor: yaxis,
           showticklabels: rowNo === this._rowCnt - 1 ? true: false,
-          autorange: xReversed ? 'reversed' : ''
+          //autorange: xReversed ? 'reversed' : '',
+		  zeroline: false
         };
 
       if (layout['yaxis' + (rowNo + 1)] == null) {
@@ -597,11 +581,12 @@ class WaferMap extends EventEmitter {
           ticks: '',
           ticksuffix: ' ',
           autosize: false,
-          //type: 'category',
+          type: 'category',
           showgrid: false,
           domain: [yStart, yStart + yDomainSize],
           anchor: xaxis,
-          autorange: xReversed ? 'reversed' : ''
+          //autorange: xReversed ? 'reversed' : '',
+		  zeroline: false
         }
       }
 
@@ -642,6 +627,37 @@ class WaferMap extends EventEmitter {
         reversescale: this._reverseColor
       };
       traces[traces.length] = data;
+	  // add the annoated text
+      if (showLabel) {
+        for ( var i = 0; i < yValues.length; i++ ) {
+          for ( var j = 0; j < xValues.length; j++ ) {
+            var currentValue = plot_z[i][j];
+            if (currentValue != 0.0) {
+              var textColor = 'white';
+            }else{
+              var textColor = 'black';
+            }
+            var result = {
+              xref: xaxis,
+              yref: yaxis,
+              x: xValues[j],
+              y: yValues[i],
+              text: plot_z[i][j],
+              font: {
+                family: 'Arial',
+                size: 12,
+                color: 'rgb(50, 171, 196)'
+              },
+              showarrow: false,
+              font: {
+                color: textColor
+              }
+            };
+            layout.annotations.push(result);
+            
+          }
+        }
+      }
 
 
     }
@@ -649,31 +665,40 @@ class WaferMap extends EventEmitter {
       xValues.forEach(function(d, i){
         var x = (i + 0.5) * cellWidth + ltx;
         var y = lty + (maxY + 1 + spaceCellCnt / 2) * cellHeight;
-        var opacity = cellWidth >= 30 ? 1 : cellWidth >= 20 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;
-        if(opacity === 1){
-          drawText(context, d, x, y, '10 10px Roboto, sans-serif');
+		var opacity = cellWidth >= 20 ? 1 : cellWidth >= 10 ? (d + 3) % 2 : cellWidth >= 8 ? ((d + 3) % 3 === 0 ? 1 : 0) : (d + 4) % 4 === 0 ? 1 : 0;
+        // always show the last item
+        if(i === xValues.length + 1) {
+          opacity = 1;
         }
+        if(opacity === 1){
+          drawText(context, d, x, y, '10 9px Roboto, sans-serif');
+        }
+		
       });
       var yCoordTitle = lty + chartHeight -this._marginNeighbor;
       yCoordTitle = cellHeight < 10 ? yCoordTitle + 8 : yCoordTitle;
       if (this._series) {
-        drawText(this._context, this._words[tableNo].title, ltx + (maxX + 1)* cellWidth / 2, yCoordTitle, '10 10px Roboto, sans-serif');
+        drawText(this._context, this._words[tableNo].title, ltx + (maxX + 1)* cellWidth / 2, yCoordTitle, '10 9px Roboto, sans-serif');
       }
 
       if (tableNo % this._columnCnt === 0) {
         yValues.forEach(function(d, i){
           var y = (yValues.length - i - 1 + 0.5) * cellHeight + lty;
           var x = 0 - 5;
-          var opacity = cellHeight >= 30 ? 1 : cellHeight >= 20 ? (d + 3) % 2 : (d + 3) % 3 === 0 ? 1 : 0;
-          if(opacity === 1) {
-            drawText(context, d, x, y, '10 10px Roboto, sans-serif');
+          var opacity = cellHeight >= 20 ? 1 : cellHeight >= 10 ? (d + 3) % 2 : cellHeight >= 8 ? ((d + 3) % 3 === 0 ? 1 : 0) : (d + 4) % 4 === 0 ? 1 : 0;
+          
+          if(i === yValues.length + 1) {
+            opacity = 1;
+          }
+          if(opacity === 1){
+            drawText(context, d, x, y, '10 9px Roboto, sans-serif');
           }
         });
       }
 
       var data = this._series ? this._words[tableNo].tables["0"].rows : this._words[tableNo].rows;
 
-      var showLabel = this._showLabel;
+      
       var nextCol = this._nextCol;
       data.forEach(function(d) {
       
@@ -731,7 +756,8 @@ class WaferMap extends EventEmitter {
         context.closePath();
         //drawLabelText(context, virtualColor, x, y, cellWidth, cellHeight, '400 14px Roboto, sans-serif');
         if (showLabel) {
-          drawLabelText(context, d[2], x, y, cellWidth, cellHeight, '400 14px Roboto, sans-serif');
+		  let fontSize = cellWidth > 50 ? '300 14px Roboto, sans-serif' : cellWidth > 40 ? '300 12px Roboto, sans-serif' : cellWidth > 30 ? '300 10px Roboto, sans-serif' : '300 8px Roboto, sans-serif'; 
+          drawLabelText(context, d[2], x, y, cellWidth, cellHeight, fontSize);
         }
 
         console.log("x= " + x + ", y = " +y);
@@ -922,6 +948,9 @@ class WaferMap extends EventEmitter {
             .style('dominant-baseline', 'central')
             .style('text-anchor', 'middle')
             .style('fill', '#000000')
+			.style('font-size', function (d) {
+              return cellWidth > 50 ? '1.0em' : cellWidth > 40 ? '0.8em': cellWidth > 30 ? '0.6em' : '0.4em'; 
+            })
             .attr("x", function (d) {
               let i = xValues.indexOf(d[0] + 0) + 0.5;
               console.log('x= ' + d[0] + ": " + i * cellWidth + ltx);
@@ -1060,6 +1089,8 @@ class WaferMap extends EventEmitter {
             .text(this._series ? this._words[0].tables["0"].columns[2].title : this._words[0].columns[2].title)
             .attr("x", this._element.offsetWidth - this._marginLeft - 10)
             .attr("y", legendHeight - 15)
+			.style('font-size', '0.9em')
+            .style('font-weight', '400')
             .style("text-anchor", "end");
 
 
