@@ -618,6 +618,8 @@ class WaferMap extends EventEmitter {
         type: 'heatmap',
         xgap: 1,
         ygap: 1,
+        colorbar:
+          {title: this._series ? this._words[0].tables["0"].columns[2].title : this._words[0].columns[2].title},
 
         colorscale: plotyColorScale,
         zmin: this._minZ,
