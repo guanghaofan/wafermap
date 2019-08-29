@@ -15,6 +15,23 @@
   - `user can modify the Default Axis Orientation[x/asc, y/des] in the kibana.yml`
   - `user need to config the hard/soft bin field name and hard/soft bin color mappings in the kibana.yml if they want to use the customized color`
   - `user can switch the chart type from SVG to Canvas to fast plot the big data size wafer maps`
+  - `for wafer/wafer lot yield case, need to add a Pass/Fail flag which must set as a Numberic mapping type, and then the yield is just the sum of Pass/Fail flag field'
+  
+  ####  sidd-svg
+  ![wafermap](sidd-svg.png)
+  
+  ####  sidd-canvas
+  ![wafermap](sidd-canvas.png)
+  
+  ####  sidd-plotly
+  ![wafermap](sidd-plotly.png)
+    
+  ####  hardbin-plotly
+  ![wafermap](HardBin-plotly.png)
+  
+  ####  hardbin-svg-ordinal
+  ![wafermap](HardBin-SVG-ordinal.png)
+  
   
 ## example of kibana.yml for wafermap plugin configurations
   - `wafermap.defaultXAxisOrientation: "des"`
