@@ -24,7 +24,7 @@
   ![wafermap](sidd-canvas.png)
   
   ####  sidd-plotly
-  ![wafermap](sidd-plotly.png
+  ![wafermap](sidd-plotly.png)
     
   ####  hardbin-plotly
   ![wafermap](HardBin-plotly.png)
