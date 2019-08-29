@@ -668,6 +668,9 @@ class WaferMap extends EventEmitter {
         for ( var i = 0; i < yValues.length; i++ ) {
           for ( var j = 0; j < xValues.length; j++ ) {
             var currentValue = plot_z[i][j];
+            if (currentValue == null) {
+              continue;
+            }
             if (currentValue != 0.0) {
               var textColor = 'white';
             }else{
