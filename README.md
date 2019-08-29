@@ -25,8 +25,10 @@
   - `wafermap.defaultHardBinColor: 0-RGB(0,0,0):1-RGB(0,255,0):2-RGB(0,255,0):3-RGB(0,255,0):4-RGB(0,255,0):5-RGB(0,0,255)`
   
 ## Installation
+please download corresponding release version to match your kibana installation version.
+you may need to change the minor version in the `package.json` file to your installed kibana version if needed.
 <pre>
-./kibana-plugin install https://github.com/guanghaofan/wafermap/releases/releases/download/6.x.x/kibana-xlsx-import-6.x.x.zip
+./kibana-plugin install https://github.com/guanghaofan/wafermap/releases/download/v7.3.x/wafermap-7.3.x.zip
 </pre>
 
 ## development
